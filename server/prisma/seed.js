@@ -168,13 +168,16 @@ const propertyStyles = [
 ];
 
 const expandedApartments = markets.flatMap((market, marketIndex) =>
-  propertyStyles.map((style, styleIndex) => ({
-    ...style,
-    title: `${style.title} · ${market.areas[styleIndex]}`,
-    location: `${market.areas[styleIndex]}, ${market.city}`,
-    description: `${style.description} Set in ${market.areas[styleIndex]}, ${market.city}, it is a convenient base for exploring the neighbourhood and getting around the city.`,
-    pricePerNight: style.basePrice + marketIndex * 6,
-  }))
+  propertyStyles.map((style, styleIndex) => {
+    const { basePrice, ...listing } = style;
+    return {
+      ...listing,
+      title: `${style.title} · ${market.areas[styleIndex]}`,
+      location: `${market.areas[styleIndex]}, ${market.city}`,
+      description: `${style.description} Set in ${market.areas[styleIndex]}, ${market.city}, it is a convenient base for exploring the neighbourhood and getting around the city.`,
+      pricePerNight: basePrice + marketIndex * 6,
+    };
+  })
 );
 
 const catalog = [...apartments, ...expandedApartments].map((apartment, index) => ({
