@@ -54,7 +54,8 @@ app.get('/api/health', async (req, res) => {
       uptime: Math.floor(process.uptime()),
     });
   } catch (error) {
-    res.status(503).json({ status: 'error', db: 'disconnected', error: error.message });
+    console.error('Database health check failed:', error.message);
+    res.status(503).json({ status: 'error', db: 'disconnected' });
   }
 });
 

@@ -1,61 +1,29 @@
 import { Link } from 'react-router-dom';
 
-const FALLBACK = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80';
+const FALLBACK = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1000&q=85';
 
 export default function ApartmentCard({ apartment }) {
-  const { id, title, location, pricePerNight, bedrooms, bathrooms, maxGuests, images, isAvailable } =
-    apartment;
-
+  const { id, title, location, pricePerNight, bedrooms, bathrooms, maxGuests, images } = apartment;
   return (
-    <Link
-      to={`/apartments/${id}`}
-      className="card hover:shadow-md transition-all duration-200 group block"
-    >
-      {/* Image */}
-      <div className="aspect-[4/3] overflow-hidden bg-gray-100 relative">
-        <img
-          src={images?.[0] || FALLBACK}
-          alt={title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => { e.currentTarget.src = FALLBACK; }}
-          loading="lazy"
-        />
-        {!isAvailable && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              Unavailable
-            </span>
+    <article className="group overflow-hidden rounded-card border border-sand-deep bg-white">
+      <Link to={`/apartments/${id}`} aria-label={`View ${title}`} className="block overflow-hidden bg-sand">
+        <img src={images?.[0] || FALLBACK} alt={title} loading="lazy" className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" onError={(event) => { event.currentTarget.src = FALLBACK; }} />
+      </Link>
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm text-slate">{location}</p>
+            <h3 className="mt-1 truncate font-heading text-lg font-bold">{title}</h3>
           </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1 flex-1">
-            {title}
-          </h3>
-          <span className="shrink-0 text-blue-600 font-bold">
-            ${parseFloat(pricePerNight).toFixed(0)}
-            <span className="text-xs text-gray-400 font-normal">/night</span>
-          </span>
+          <p className="shrink-0 text-right font-heading font-bold">${Number(pricePerNight).toFixed(0)}<span className="block font-body text-xs font-normal text-slate">/ night</span></p>
         </div>
-
-        <p className="text-gray-500 text-sm flex items-center gap-1">
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span className="line-clamp-1">{location}</span>
-        </p>
-
-        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
-          <span>🛏 {bedrooms} bed{bedrooms !== 1 ? 's' : ''}</span>
-          <span>🚿 {bathrooms} bath{bathrooms !== 1 ? 's' : ''}</span>
-          <span>👥 {maxGuests} guests</span>
+        <div className="mt-4 flex items-center gap-3 border-t border-sand-deep pt-3 text-xs text-slate">
+          <span>{bedrooms} {bedrooms === 1 ? 'bedroom' : 'bedrooms'}</span><span aria-hidden="true">·</span>
+          <span>{bathrooms} {bathrooms === 1 ? 'bath' : 'baths'}</span><span aria-hidden="true">·</span>
+          <span>Up to {maxGuests} guests</span>
         </div>
+        <Link to={`/apartments/${id}`} className="mt-4 inline-flex text-sm font-semibold text-accent underline-offset-4 hover:underline">View stay <span className="ml-1" aria-hidden="true">→</span></Link>
       </div>
-    </Link>
+    </article>
   );
 }

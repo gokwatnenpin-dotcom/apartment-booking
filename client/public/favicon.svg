@@ -1,3 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text y=".9em" font-size="90">🏠</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <rect width="40" height="40" rx="11" fill="#1F2A30"/>
+  <path d="M11 12h18L12 28h17" fill="none" stroke="#F5F2EB" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m20 20 9-8" fill="none" stroke="#B94A30" stroke-width="3.5" stroke-linecap="round"/>
 </svg>

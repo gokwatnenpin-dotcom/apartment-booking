@@ -8,6 +8,8 @@ const getAll = async (req, res, next) => {
       minPrice,
       maxPrice,
       guests,
+      bedrooms,
+      amenities,
       checkIn,
       checkOut,
       page = 1,
@@ -15,7 +17,7 @@ const getAll = async (req, res, next) => {
     } = req.query;
 
     const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
 
     const where = { isAvailable: true };
@@ -32,6 +34,17 @@ const getAll = async (req, res, next) => {
 
     if (guests) {
       where.maxGuests = { gte: parseInt(guests) };
+    }
+
+    if (bedrooms) {
+      where.bedrooms = { gte: parseInt(bedrooms) };
+    }
+
+    if (amenities) {
+      const requestedAmenities = (Array.isArray(amenities) ? amenities : [amenities])
+        .map((amenity) => String(amenity).trim())
+        .filter(Boolean);
+      if (requestedAmenities.length) where.amenities = { hasEvery: requestedAmenities };
     }
 
     // Exclude apartments with overlapping active bookings
@@ -146,7 +159,7 @@ const update = async (req, res, next) => {
     if (maxGuests !== undefined) data.maxGuests = parseInt(maxGuests);
     if (amenities !== undefined) data.amenities = Array.isArray(amenities) ? amenities : [];
     if (images !== undefined) data.images = Array.isArray(images) ? images : [];
-    if (isAvailable !== undefined) data.isAvailable = Boolean(isAvailable);
+    if (isAvailable !== undefined) data.isAvailable = isAvailable === true || isAvailable === 'true';
 
     const apartment = await prisma.apartment.update({ where: { id }, data });
     res.json(apartment);

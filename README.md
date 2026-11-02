@@ -1,6 +1,6 @@
-# 🏠 StayEasy – Full-Stack Apartment Booking Monorepo
+# Ziggy — Apartment booking platform
 
-A production-ready full-stack apartment booking application built as a clean, structured monorepo.
+A full-stack apartment booking platform built around the Ziggy Brand & Build Blueprint in `Ziggy_Brand_and_Build_Blueprint.pdf`.
 
 ---
 
@@ -9,6 +9,10 @@ A production-ready full-stack apartment booking application built as a clean, st
 - **Frontend (`client/`):** React 18, Vite, React Router v6, Tailwind CSS, Axios, React Hot Toast
 - **Backend (`server/`):** Node.js, Express, PostgreSQL, Prisma ORM, JWT, bcryptjs, Helmet, Morgan, Express Rate Limit
 - **Root:** npm monorepo with `concurrently` for running client & server simultaneously
+
+## Product and visual direction
+
+Ziggy is the calm, no-nonsense way to book an apartment. The interface uses a warm Sand background, Ink text, Stone borders and one Terracotta action colour. Manrope is used for headings and Inter for body text. Gradients, decorative interface emoji and unnecessary shadows are excluded. The booking flow shows the nightly price calculation before the guest reserves.
 
 ---
 
@@ -177,7 +181,7 @@ You can deploy using the included `render.yaml` blueprint or configure manually:
    - **Output Directory:** `dist`
 3. Add Environment Variable:
    - `VITE_API_URL`: `https://your-backend-api.onrender.com/api`
-4. The included `client/vercel.json` ensures that client-side React Router paths (e.g. `/apartments/:id`, `/my-bookings`) reload correctly without 404 errors:
+4. The included `client/vercel.json` ensures that client-side React Router paths (e.g. `/apartments/:id`, `/bookings`, `/admin`) reload correctly without 404 errors:
 ```json
 {
   "rewrites": [

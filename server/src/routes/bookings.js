@@ -1,5 +1,5 @@
 const express = require('express');
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const { create, getMy, cancel, getAll } = require('../controllers/bookingController');
 const authenticate = require('../middleware/auth');
 const requireAdmin = require('../middleware/admin');
@@ -24,6 +24,6 @@ router.post(
 );
 
 router.get('/', authenticate, requireAdmin, getAll);
-router.patch('/:id/cancel', authenticate, cancel);
+router.patch('/:id/cancel', authenticate, param('id').isUUID().withMessage('Invalid booking ID'), validate, cancel);
 
 module.exports = router;

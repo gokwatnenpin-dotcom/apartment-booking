@@ -158,7 +158,10 @@ async function main() {
 
   console.log('\n🏠 Creating apartments...');
   for (const apt of apartments) {
-    const created = await prisma.apartment.create({ data: apt });
+    const existing = await prisma.apartment.findFirst({ where: { title: apt.title, location: apt.location } });
+    const created = existing
+      ? await prisma.apartment.update({ where: { id: existing.id }, data: apt })
+      : await prisma.apartment.create({ data: apt });
     console.log(`  ✅ ${created.title}`);
   }
 

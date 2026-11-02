@@ -1,116 +1,80 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import ApartmentCard from '../components/ApartmentCard';
-import LoadingSpinner from '../components/LoadingSpinner';
 import api from '../api/axios';
+
+const steps = [
+  { number: '01', title: 'Choose your place', copy: 'Search stays by location, dates and the details that matter to you.' },
+  { number: '02', title: 'Make it yours', copy: 'Check the photos, amenities and full price before you reserve.' },
+  { number: '03', title: 'Settle in', copy: 'Your confirmed stay and booking details are ready in one place.' },
+];
 
 export default function Home() {
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    const fetchFeatured = async () => {
-      try {
-        const { data } = await api.get('/apartments?limit=6');
-        setFeatured(data.data || []);
-      } catch (err) {
-        console.error('Failed to load featured apartments', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFeatured();
+    api.get('/apartments?limit=3')
+      .then(({ data }) => setFeatured(data.data || []))
+      .catch(() => setFailed(true))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white py-20 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-        <div className="relative max-w-5xl mx-auto text-center">
-          <span className="inline-block py-1 px-3 rounded-full bg-blue-500/20 text-blue-200 text-xs font-semibold uppercase tracking-wider mb-4 border border-blue-400/30">
-            Handcrafted stays for unforgettable moments
-          </span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
-            Find Your Next Perfect Stay
-          </h1>
-          <p className="text-lg sm:text-xl text-blue-100 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Discover premium villas, modern city lofts, and cozy mountain cabins designed for dream vacations and remote stays.
-          </p>
-
-          <div className="max-w-4xl mx-auto text-left text-gray-900">
-            <SearchBar />
+    <>
+      <section className="bg-sand pb-14 pt-14 sm:pb-20 sm:pt-20">
+        <div className="page-shell">
+          <div className="max-w-3xl">
+            <p className="eyebrow mb-4">A better way to stay</p>
+            <h1 className="max-w-2xl text-[40px] font-extrabold tracking-[-0.045em] sm:text-5xl lg:text-[56px] lg:leading-[1.08]">Book the place.<br className="hidden sm:block" /> Skip the noise.</h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate sm:text-lg">Find an apartment that fits your plans, with clear details and a straightforward booking.</p>
           </div>
+          <div className="mt-9 max-w-5xl"><SearchBar /></div>
         </div>
       </section>
 
-      {/* Featured Apartments */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Featured Apartments</h2>
-            <p className="text-gray-500 text-sm mt-1">Explore our most popular and highly rated destinations</p>
-          </div>
-          <Link
-            to="/apartments"
-            className="text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1 group text-sm"
-          >
-            View all listings
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="py-16">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : featured.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-gray-100 p-8">
-            <p className="text-gray-500 text-lg">No apartments found. Check back later!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {featured.map((apt) => (
-              <ApartmentCard key={apt.id} apartment={apt} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Value Proposition */}
-      <section className="bg-white border-t border-b border-gray-100 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Why Book With StayEasy?</h2>
-            <p className="text-gray-500 text-sm mt-2">Everything you need for an easy, stress-free stay</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="card p-6 border border-gray-100 text-center">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="font-bold text-gray-900 text-lg mb-2">Guaranteed Booking</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">
-                Zero double bookings. All reservations are protected with transactional concurrency.
-              </p>
+      <section className="bg-white py-14 sm:py-16">
+        <div className="page-shell">
+          <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="eyebrow">Handpicked for you</p>
+              <h2 className="mt-2 text-2xl font-bold sm:text-[30px]">Featured stays</h2>
             </div>
-            <div className="card p-6 border border-gray-100 text-center">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3 className="font-bold text-gray-900 text-lg mb-2">Instant Confirmation</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">
-                Receive instant confirmation, booking details, and direct access upon reserving.
-              </p>
-            </div>
-            <div className="card p-6 border border-gray-100 text-center">
-              <div className="text-4xl mb-4">🌟</div>
-              <h3 className="font-bold text-gray-900 text-lg mb-2">Curated Quality</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">
-                Every apartment is verified for high-speed Wi-Fi, premium amenities, and top-tier comfort.
-              </p>
-            </div>
+            <Link to="/apartments" className="text-sm font-semibold text-accent underline-offset-4 hover:underline">Browse all stays <span aria-hidden="true">→</span></Link>
           </div>
+          {loading ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading featured stays">
+              {[0, 1, 2].map((item) => <div key={item} className="h-[340px] animate-pulse rounded-card border border-sand-deep bg-sand" />)}
+            </div>
+          ) : featured.length ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{featured.slice(0, 3).map((apartment) => <ApartmentCard key={apartment.id} apartment={apartment} />)}</div>
+          ) : (
+            <div className="rounded-card border border-sand-deep bg-sand px-6 py-12 text-center">
+              <h3 className="font-heading text-lg font-bold">{failed ? 'Stays are temporarily unavailable' : 'No stays to show yet'}</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-slate">{failed ? 'Please try again in a moment, or browse all stays.' : 'New apartments will appear here as soon as they are listed.'}</p>
+              <Link to="/apartments" className="mt-5 inline-flex font-semibold text-accent underline-offset-4 hover:underline">Browse stays</Link>
+            </div>
+          )}
         </div>
       </section>
-    </div>
+
+      <section className="border-t border-sand-deep bg-sand py-14 sm:py-16">
+        <div className="page-shell">
+          <div className="max-w-xl">
+            <p className="eyebrow">How it works</p>
+            <h2 className="mt-2 text-2xl font-bold sm:text-[30px]">A clear path to your stay</h2>
+          </div>
+          <ol className="mt-8 grid gap-4 md:grid-cols-3">
+            {steps.map((step) => <li key={step.number} className="rounded-card border border-sand-deep bg-white p-6">
+              <span className="font-heading text-sm font-bold text-accent">{step.number}</span>
+              <h3 className="mt-5 font-heading text-lg font-bold">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate">{step.copy}</p>
+            </li>)}
+          </ol>
+        </div>
+      </section>
+    </>
   );
 }

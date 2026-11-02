@@ -1,81 +1,46 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function SearchBar({ compact = false, initialValues = {} }) {
+export default function SearchBar({ initialValues = {} }) {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    location: initialValues.location || '',
-    checkIn:  initialValues.checkIn  || '',
-    checkOut: initialValues.checkOut || '',
-    guests:   initialValues.guests   || '',
-  });
-
-  const today = new Date().toISOString().split('T')[0];
-
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleSearch = (e) => {
-    e.preventDefault();
+  const [form, setForm] = useState({ location: initialValues.location || '', checkIn: initialValues.checkIn || '', checkOut: initialValues.checkOut || '', guests: initialValues.guests || '' });
+  const [error, setError] = useState('');
+  const today = new Date().toISOString().slice(0, 10);
+  const change = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+  const submit = (event) => {
+    event.preventDefault();
+    if (form.checkIn && form.checkOut && form.checkOut <= form.checkIn) {
+      setError('Check-out must be after check-in.');
+      return;
+    }
+    setError('');
     const params = new URLSearchParams();
-    if (form.location) params.set('location', form.location);
-    if (form.checkIn)  params.set('checkIn',  form.checkIn);
-    if (form.checkOut) params.set('checkOut', form.checkOut);
-    if (form.guests)   params.set('guests',   form.guests);
+    Object.entries(form).forEach(([key, value]) => { if (value) params.set(key, value); });
     navigate(`/apartments?${params.toString()}`);
   };
 
-  if (compact) {
-    return (
-      <form onSubmit={handleSearch} className="flex flex-wrap gap-2">
-        <input name="location" value={form.location} onChange={handleChange} placeholder="Location" className="input-field flex-1 min-w-[120px]" />
-        <input name="checkIn" type="date" value={form.checkIn} onChange={handleChange} min={today} className="input-field flex-1 min-w-[130px]" />
-        <input name="checkOut" type="date" value={form.checkOut} onChange={handleChange} min={form.checkIn || today} className="input-field flex-1 min-w-[130px]" />
-        <input name="guests" type="number" value={form.guests} onChange={handleChange} placeholder="Guests" min="1" className="input-field w-24" />
-        <button type="submit" className="btn-primary">Search</button>
-      </form>
-    );
-  }
-
   return (
-    <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
-      <form onSubmit={handleSearch}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Location</label>
-            <input
-              name="location" value={form.location} onChange={handleChange}
-              placeholder="Where to?" className="input-field"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Check-in</label>
-            <input
-              name="checkIn" type="date" value={form.checkIn} onChange={handleChange}
-              min={today} className="input-field"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Check-out</label>
-            <input
-              name="checkOut" type="date" value={form.checkOut} onChange={handleChange}
-              min={form.checkIn || today} className="input-field"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Guests</label>
-            <input
-              name="guests" type="number" value={form.guests} onChange={handleChange}
-              placeholder="How many?" min="1" className="input-field"
-            />
-          </div>
-        </div>
-        <div className="mt-5 flex justify-end">
-          <button type="submit" className="btn-primary px-10 py-3 text-base">
-            🔍 Search Apartments
-          </button>
-        </div>
-      </form>
-    </div>
+    <form onSubmit={submit} className="rounded-card border border-sand-deep bg-white p-3 lg:p-2">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr_0.7fr_auto] lg:items-end">
+      <div className="px-3 py-1">
+        <label htmlFor="search-location" className="mb-1 block text-xs font-semibold text-slate">Where</label>
+        <input id="search-location" name="location" value={form.location} onChange={change} placeholder="City or neighbourhood" className="w-full border-0 bg-transparent p-0 text-sm text-ink placeholder:text-slate" />
+      </div>
+      <div className="border-t border-sand-deep px-3 py-1 sm:border-l sm:border-t-0">
+        <label htmlFor="search-checkin" className="mb-1 block text-xs font-semibold text-slate">Check-in</label>
+        <input id="search-checkin" name="checkIn" type="date" min={today} value={form.checkIn} onChange={change} className="w-full border-0 bg-transparent p-0 text-sm text-ink" />
+      </div>
+      <div className="border-t border-sand-deep px-3 py-1 sm:border-l sm:border-t-0">
+        <label htmlFor="search-checkout" className="mb-1 block text-xs font-semibold text-slate">Check-out</label>
+        <input id="search-checkout" name="checkOut" type="date" min={form.checkIn || today} value={form.checkOut} onChange={change} className="w-full border-0 bg-transparent p-0 text-sm text-ink" />
+      </div>
+      <div className="border-t border-sand-deep px-3 py-1 sm:border-l sm:border-t-0">
+        <label htmlFor="search-guests" className="mb-1 block text-xs font-semibold text-slate">Guests</label>
+        <input id="search-guests" name="guests" type="number" min="1" value={form.guests} onChange={change} placeholder="Any" className="w-full border-0 bg-transparent p-0 text-sm text-ink placeholder:text-slate" />
+      </div>
+      <button type="submit" className="btn-primary h-12 w-full lg:w-auto">Search stays</button>
+      </div>
+      {error && <p role="alert" className="px-3 pt-2 text-xs font-medium text-danger">{error}</p>}
+    </form>
   );
 }

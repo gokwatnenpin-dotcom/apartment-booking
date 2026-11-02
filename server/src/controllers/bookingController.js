@@ -79,10 +79,15 @@ const create = async (req, res, next) => {
           user: { select: { id: true, name: true, email: true } },
         },
       });
-    });
+    }, { isolationLevel: 'Serializable' });
 
     res.status(201).json(booking);
   } catch (error) {
+    // PostgreSQL serialization failures mean a concurrent booking transaction
+    // won the race. Treat that outcome as an unavailable date range.
+    if (error.code === 'P2034') {
+      return res.status(409).json({ message: 'This apartment is already booked for the selected dates' });
+    }
     next(error);
   }
 };

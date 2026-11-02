@@ -1,454 +1,68 @@
-import { useState, useEffect } from 'react';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
+const date = (value) => new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
+const statusStyle = { CONFIRMED: 'bg-success-tint text-success', PENDING: 'bg-warning-tint text-warning', CANCELLED: 'bg-danger-tint text-danger' };
+
 export default function AdminDashboard() {
-  const [tab, setTab] = useState('apartments'); // 'apartments' | 'bookings'
+  const [tab, setTab] = useState('bookings');
   const [apartments, setApartments] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [status, setStatus] = useState('ALL');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  // Modal / Form state for Create / Edit Apartment
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    location: '',
-    pricePerNight: '',
-    bedrooms: '1',
-    bathrooms: '1',
-    maxGuests: '2',
-    amenities: 'WiFi, Kitchen, Air Conditioning',
-    images: '',
-    isAvailable: true,
-  });
+  const refresh = () => Promise.all([api.get('/apartments?limit=100'), api.get('/bookings?limit=100')])
+    .then(([apartmentsResponse, bookingsResponse]) => { setApartments(apartmentsResponse.data.data || []); setBookings(bookingsResponse.data.data || []); setError(false); })
+    .catch(() => setError(true)).finally(() => setLoading(false));
+  useEffect(() => { refresh(); }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [aptRes, bookRes] = await Promise.all([
-        api.get('/apartments?limit=100'),
-        api.get('/bookings?limit=100'),
-      ]);
-      setApartments(aptRes.data.data || []);
-      setBookings(bookRes.data.data || []);
-    } catch (err) {
-      toast.error('Failed to fetch admin data');
-    } finally {
-      setLoading(false);
-    }
+  const filteredBookings = useMemo(() => bookings.filter((booking) => (status === 'ALL' || booking.status === status) && `${booking.user?.name || ''} ${booking.user?.email || ''} ${booking.apartment?.title || ''}`.toLowerCase().includes(search.toLowerCase())), [bookings, status, search]);
+  const confirmed = bookings.filter((booking) => booking.status === 'CONFIRMED');
+  const revenue = confirmed.reduce((sum, booking) => sum + Number(booking.totalPrice), 0);
+  const now = Date.now();
+  const occupiedApartmentIds = new Set(confirmed.filter((booking) => new Date(booking.checkIn).getTime() <= now && new Date(booking.checkOut).getTime() > now).map((booking) => booking.apartmentId));
+  const occupancy = apartments.length ? Math.round((occupiedApartmentIds.size / apartments.length) * 100) : 0;
+
+  const cancel = async (booking) => {
+    if (!window.confirm('Cancel this booking?')) return;
+    try { await api.patch(`/bookings/${booking.id}/cancel`); setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, status: 'CANCELLED' } : item)); toast.success('Booking cancelled.'); }
+    catch (err) { toast.error(err.response?.data?.message || 'We couldn’t cancel this booking.'); }
+  };
+  const removeApartment = async (apartment) => {
+    if (!window.confirm(`Delete ${apartment.title}?`)) return;
+    try { await api.delete(`/apartments/${apartment.id}`); setApartments((current) => current.filter((item) => item.id !== apartment.id)); toast.success('Apartment deleted.'); }
+    catch (err) { toast.error(err.response?.data?.message || 'We couldn’t delete this apartment.'); }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  return <main className="page-shell py-8 sm:py-10">
+    <div className="grid gap-7 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <aside className="h-fit rounded-card bg-ink p-4 text-sand">
+        <p className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-sand/60">Workspace</p>
+        <nav aria-label="Admin navigation" className="mt-2 flex gap-2 overflow-x-auto lg:flex-col">
+          <button onClick={() => setTab('bookings')} className={`rounded-control px-3 py-2.5 text-left text-sm font-semibold ${tab === 'bookings' ? 'bg-ink-soft text-white' : 'text-sand/75 hover:bg-ink-soft'}`}>Bookings</button>
+          <button onClick={() => setTab('apartments')} className={`rounded-control px-3 py-2.5 text-left text-sm font-semibold ${tab === 'apartments' ? 'bg-ink-soft text-white' : 'text-sand/75 hover:bg-ink-soft'}`}>Apartments</button>
+        </nav>
+      </aside>
 
-  const openCreateModal = () => {
-    setEditingId(null);
-    setFormData({
-      title: '',
-      description: '',
-      location: '',
-      pricePerNight: '',
-      bedrooms: '1',
-      bathrooms: '1',
-      maxGuests: '2',
-      amenities: 'WiFi, Kitchen, Air Conditioning',
-      images: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
-      isAvailable: true,
-    });
-    setShowModal(true);
-  };
-
-  const openEditModal = (apt) => {
-    setEditingId(apt.id);
-    setFormData({
-      title: apt.title,
-      description: apt.description,
-      location: apt.location,
-      pricePerNight: apt.pricePerNight,
-      bedrooms: apt.bedrooms,
-      bathrooms: apt.bathrooms,
-      maxGuests: apt.maxGuests,
-      amenities: apt.amenities?.join(', ') || '',
-      images: apt.images?.join(', ') || '',
-      isAvailable: apt.isAvailable,
-    });
-    setShowModal(true);
-  };
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        title: formData.title,
-        description: formData.description,
-        location: formData.location,
-        pricePerNight: parseFloat(formData.pricePerNight),
-        bedrooms: parseInt(formData.bedrooms, 10),
-        bathrooms: parseInt(formData.bathrooms, 10),
-        maxGuests: parseInt(formData.maxGuests, 10),
-        amenities: formData.amenities.split(',').map((s) => s.trim()).filter(Boolean),
-        images: formData.images.split(',').map((s) => s.trim()).filter(Boolean),
-        isAvailable: formData.isAvailable,
-      };
-
-      if (editingId) {
-        await api.put(`/apartments/${editingId}`, payload);
-        toast.success('Apartment updated successfully');
-      } else {
-        await api.post('/apartments', payload);
-        toast.success('Apartment created successfully');
-      }
-
-      setShowModal(false);
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Operation failed');
-    }
-  };
-
-  const handleDeleteApartment = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this apartment?')) return;
-    try {
-      await api.delete(`/apartments/${id}`);
-      toast.success('Apartment deleted');
-      setApartments((prev) => prev.filter((a) => a.id !== id));
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Could not delete apartment');
-    }
-  };
-
-  const handleCancelBooking = async (id) => {
-    if (!window.confirm('Are you sure you want to cancel this booking?')) return;
-    try {
-      await api.patch(`/bookings/${id}/cancel`);
-      toast.success('Booking cancelled');
-      setBookings((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status: 'CANCELLED' } : b))
-      );
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Could not cancel booking');
-    }
-  };
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage listings and view all customer reservations</p>
+      <section className="min-w-0">
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">Ziggy management</p><h1 className="mt-2 text-3xl font-bold">Dashboard</h1><p className="mt-2 text-sm text-slate">Bookings and listing activity at a glance.</p></div>{tab === 'apartments' && <Link to="/admin/apartments/new" className="btn-primary">Add apartment</Link>}</div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[['Bookings', bookings.length], ['Confirmed revenue', `$${revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`], ['Occupancy', `${occupancy}%`]].map(([label, value]) => <article key={label} className="rounded-card border border-sand-deep bg-white p-5"><p className="text-sm text-slate">{label}</p><p className="mt-2 font-heading text-2xl font-bold">{value}</p></article>)}
         </div>
-        {tab === 'apartments' && (
-          <button onClick={openCreateModal} className="btn-primary">
-            + New Apartment
-          </button>
-        )}
-      </div>
+        {error && <div role="alert" className="mt-6 rounded-control border border-danger/30 bg-danger-tint p-4 text-sm text-danger">Couldn’t load dashboard data. Check the server and database, then <button onClick={() => { setLoading(true); refresh(); }} className="font-bold underline">try again</button>.</div>}
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 mb-6">
-        <button
-          onClick={() => setTab('apartments')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-colors ${
-            tab === 'apartments'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Apartments ({apartments.length})
-        </button>
-        <button
-          onClick={() => setTab('bookings')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-colors ${
-            tab === 'bookings'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Bookings ({bookings.length})
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="py-20">
-          <LoadingSpinner size="lg" />
-        </div>
-      ) : tab === 'apartments' ? (
-        /* Apartments Table */
-        <div className="card overflow-x-auto border border-gray-100">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
-              <tr>
-                <th className="py-3.5 px-4">Apartment</th>
-                <th className="py-3.5 px-4">Location</th>
-                <th className="py-3.5 px-4">Price / Night</th>
-                <th className="py-3.5 px-4">Capacity</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {apartments.map((apt) => (
-                <tr key={apt.id} className="hover:bg-gray-50/50">
-                  <td className="py-3.5 px-4 font-medium text-gray-900 flex items-center gap-3">
-                    <img
-                      src={apt.images?.[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=100&q=80'}
-                      alt={apt.title}
-                      className="w-10 h-10 rounded-lg object-cover bg-gray-100"
-                    />
-                    <span className="truncate max-w-[200px]">{apt.title}</span>
-                  </td>
-                  <td className="py-3.5 px-4">{apt.location}</td>
-                  <td className="py-3.5 px-4 font-semibold text-gray-900">${parseFloat(apt.pricePerNight).toFixed(0)}</td>
-                  <td className="py-3.5 px-4">{apt.maxGuests} guests ({apt.bedrooms} bed, {apt.bathrooms} bath)</td>
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`badge ${
-                        apt.isAvailable
-                          ? 'bg-green-100 text-green-700 border border-green-200'
-                          : 'bg-red-100 text-red-700 border border-red-200'
-                      }`}
-                    >
-                      {apt.isAvailable ? 'Available' : 'Unavailable'}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-right space-x-2">
-                    <button
-                      onClick={() => openEditModal(apt)}
-                      className="text-blue-600 hover:text-blue-800 font-medium text-xs"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteApartment(apt.id)}
-                      className="text-red-500 hover:text-red-700 font-medium text-xs"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        /* Bookings Table */
-        <div className="card overflow-x-auto border border-gray-100">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
-              <tr>
-                <th className="py-3.5 px-4">Apartment</th>
-                <th className="py-3.5 px-4">Guest</th>
-                <th className="py-3.5 px-4">Dates</th>
-                <th className="py-3.5 px-4">Total</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {bookings.map((b) => (
-                <tr key={b.id} className="hover:bg-gray-50/50">
-                  <td className="py-3.5 px-4 font-medium text-gray-900">
-                    {b.apartment?.title || 'Unknown Apartment'}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <div>{b.user?.name}</div>
-                    <div className="text-xs text-gray-400">{b.user?.email}</div>
-                  </td>
-                  <td className="py-3.5 px-4 text-xs">
-                    {new Date(b.checkIn).toLocaleDateString()} → {new Date(b.checkOut).toLocaleDateString()}
-                  </td>
-                  <td className="py-3.5 px-4 font-semibold text-gray-900">
-                    ${parseFloat(b.totalPrice).toFixed(2)}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`badge ${
-                        b.status === 'CONFIRMED'
-                          ? 'bg-green-100 text-green-700 border border-green-200'
-                          : b.status === 'PENDING'
-                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-                          : 'bg-red-100 text-red-700 border border-red-200'
-                      }`}
-                    >
-                      {b.status}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-right">
-                    {b.status !== 'CANCELLED' && (
-                      <button
-                        onClick={() => handleCancelBooking(b.id)}
-                        className="text-xs text-red-600 hover:text-red-800 font-medium"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="card max-w-xl w-full p-6 bg-white my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
-                {editingId ? 'Edit Apartment' : 'Add New Apartment'}
-              </h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-              >
-                &times;
-              </button>
-            </div>
-
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Title</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="input-field text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  required
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="input-field text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Location</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="input-field text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Price / Night ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    value={formData.pricePerNight}
-                    onChange={(e) => setFormData({ ...formData, pricePerNight: e.target.value })}
-                    className="input-field text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Bedrooms</label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.bedrooms}
-                    onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
-                    className="input-field text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Bathrooms</label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.bathrooms}
-                    onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value })}
-                    className="input-field text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Max Guests</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={formData.maxGuests}
-                    onChange={(e) => setFormData({ ...formData, maxGuests: e.target.value })}
-                    className="input-field text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Amenities (comma separated)
-                </label>
-                <input
-                  type="text"
-                  value={formData.amenities}
-                  onChange={(e) => setFormData({ ...formData, amenities: e.target.value })}
-                  placeholder="WiFi, Pool, Air Conditioning"
-                  className="input-field text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Image URLs (comma separated)
-                </label>
-                <input
-                  type="text"
-                  value={formData.images}
-                  onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-                  placeholder="https://image1.jpg, https://image2.jpg"
-                  className="input-field text-sm"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isAvailable"
-                  checked={formData.isAvailable}
-                  onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="isAvailable" className="text-sm font-semibold text-gray-700">
-                  Available for booking
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="btn-secondary text-sm"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary text-sm">
-                  {editingId ? 'Save Changes' : 'Create Listing'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        {tab === 'bookings' ? <section className="mt-8">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-heading text-xl font-bold">Bookings</h2><p className="mt-1 text-sm text-slate">Review guest reservations and status.</p></div><div className="grid gap-2 sm:grid-cols-2"><label><span className="sr-only">Search bookings</span><input value={search} onChange={(e) => setSearch(e.target.value)} className="input-field" placeholder="Search guest or stay" /></label><label><span className="sr-only">Filter bookings by status</span><select value={status} onChange={(e) => setStatus(e.target.value)} className="input-field"><option value="ALL">All statuses</option><option value="CONFIRMED">Confirmed</option><option value="PENDING">Pending</option><option value="CANCELLED">Cancelled</option></select></label></div></div>
+          <div className="overflow-x-auto rounded-card border border-sand-deep bg-white"><table className="w-full min-w-[720px] border-collapse text-left text-sm"><thead><tr className="border-b border-sand-deep bg-sand text-xs uppercase tracking-wide text-slate"><th className="px-4 py-3 font-semibold">Stay and guest</th><th className="px-4 py-3 font-semibold">Dates</th><th className="px-4 py-3 font-semibold">Total</th><th className="px-4 py-3 font-semibold">Status</th><th className="px-4 py-3 text-right font-semibold">Action</th></tr></thead><tbody className="divide-y divide-sand-deep">{filteredBookings.map((booking) => <tr key={booking.id}><td className="px-4 py-4"><p className="font-semibold">{booking.apartment?.title}</p><p className="mt-1 text-xs text-slate">{booking.user?.name} · {booking.user?.email}</p></td><td className="px-4 py-4 text-slate">{date(booking.checkIn)} – {date(booking.checkOut)}</td><td className="px-4 py-4 font-semibold">${Number(booking.totalPrice).toFixed(2)}</td><td className="px-4 py-4"><span className={`status-badge ${statusStyle[booking.status] || ''}`}>{booking.status.toLowerCase()}</span></td><td className="px-4 py-4 text-right">{booking.status !== 'CANCELLED' && <button onClick={() => cancel(booking)} className="text-sm font-semibold text-danger underline-offset-4 hover:underline">Cancel</button>}</td></tr>)}{!loading && !filteredBookings.length && <tr><td colSpan="5" className="px-4 py-12 text-center text-slate">No bookings match this view.</td></tr>}</tbody></table></div>
+        </section> : <section className="mt-8">
+          <div className="mb-4"><h2 className="font-heading text-xl font-bold">Apartments</h2><p className="mt-1 text-sm text-slate">Manage the places guests can book.</p></div>
+          <div className="overflow-x-auto rounded-card border border-sand-deep bg-white"><table className="w-full min-w-[650px] border-collapse text-left text-sm"><thead><tr className="border-b border-sand-deep bg-sand text-xs uppercase tracking-wide text-slate"><th className="px-4 py-3 font-semibold">Apartment</th><th className="px-4 py-3 font-semibold">Price</th><th className="px-4 py-3 font-semibold">Capacity</th><th className="px-4 py-3 font-semibold">Availability</th><th className="px-4 py-3 text-right font-semibold">Actions</th></tr></thead><tbody className="divide-y divide-sand-deep">{apartments.map((apartment) => <tr key={apartment.id}><td className="px-4 py-4"><p className="font-semibold">{apartment.title}</p><p className="mt-1 text-xs text-slate">{apartment.location}</p></td><td className="px-4 py-4">${Number(apartment.pricePerNight).toFixed(2)} / night</td><td className="px-4 py-4">{apartment.maxGuests} guests</td><td className="px-4 py-4"><span className={`status-badge ${apartment.isAvailable ? 'bg-success-tint text-success' : 'bg-sand text-slate'}`}>{apartment.isAvailable ? 'Available' : 'Hidden'}</span></td><td className="space-x-3 px-4 py-4 text-right"><Link to={`/admin/apartments/${apartment.id}/edit`} className="font-semibold text-accent underline-offset-4 hover:underline">Edit</Link><button onClick={() => removeApartment(apartment)} className="font-semibold text-danger underline-offset-4 hover:underline">Delete</button></td></tr>)}{!loading && !apartments.length && <tr><td colSpan="5" className="px-4 py-12 text-center text-slate">No apartments yet. Add your first listing.</td></tr>}</tbody></table></div>
+        </section>}
+      </section>
     </div>
-  );
+  </main>;
 }
