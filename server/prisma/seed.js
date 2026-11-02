@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const unsplashImages = require('./unsplashImages');
 
 const prisma = new PrismaClient();
 
@@ -127,6 +128,60 @@ const apartments = [
   },
 ];
 
+const markets = [
+  { city: 'Lisbon, Portugal', areas: ['Alfama', 'Baixa', 'Graça', 'Príncipe Real'] },
+  { city: 'London, United Kingdom', areas: ['Shoreditch', 'Notting Hill', 'South Bank', 'Marylebone'] },
+  { city: 'Barcelona, Spain', areas: ['El Born', 'Eixample', 'Gràcia', 'Barceloneta'] },
+  { city: 'Copenhagen, Denmark', areas: ['Indre By', 'Nørrebro', 'Vesterbro', 'Christianshavn'] },
+  { city: 'Kyoto, Japan', areas: ['Gion', 'Higashiyama', 'Nishijin', 'Arashiyama'] },
+  { city: 'Marrakech, Morocco', areas: ['Medina', 'Gueliz', 'Kasbah', 'Hivernage'] },
+  { city: 'Cape Town, South Africa', areas: ['Gardens', 'Sea Point', 'De Waterkant', 'Woodstock'] },
+  { city: 'Vancouver, Canada', areas: ['Gastown', 'Kitsilano', 'West End', 'Mount Pleasant'] },
+  { city: 'Mexico City, Mexico', areas: ['Roma Norte', 'Condesa', 'Polanco', 'Coyoacán'] },
+  { city: 'Sydney, Australia', areas: ['Surry Hills', 'Manly', 'Newtown', 'Darlinghurst'] },
+  { city: 'Athens, Greece', areas: ['Plaka', 'Koukaki', 'Pangrati', 'Monastiraki'] },
+  { city: 'Prague, Czechia', areas: ['Malá Strana', 'Vinohrady', 'Old Town', 'Karlín'] },
+  { city: 'Reykjavík, Iceland', areas: ['Old Harbour', 'Miðborg', 'Vesturbær', 'Laugardalur'] },
+];
+
+const propertyStyles = [
+  {
+    title: 'Sunlit City Studio', bedrooms: 1, bathrooms: 1, maxGuests: 2, basePrice: 92,
+    description: 'A bright, carefully arranged studio with a comfortable queen bed, a practical kitchenette and a quiet place to unwind after a day out.',
+    amenities: ['WiFi', 'Kitchen', 'Washer', 'Heating'],
+  },
+  {
+    title: 'Courtyard Apartment', bedrooms: 2, bathrooms: 1, maxGuests: 4, basePrice: 138,
+    description: 'A calm two-bedroom apartment with a private balcony, a dining space for four and an equipped kitchen for easy meals at home.',
+    amenities: ['WiFi', 'Kitchen', 'Air Conditioning', 'Balcony', 'Washer'],
+  },
+  {
+    title: 'Open-plan Design Loft', bedrooms: 1, bathrooms: 1, maxGuests: 2, basePrice: 126,
+    description: 'An open-plan loft with tall windows, a dedicated work table and simple, comfortable furnishings close to local cafés and transit.',
+    amenities: ['WiFi', 'Kitchen', 'Workspace', 'Air Conditioning'],
+  },
+  {
+    title: 'Family Corner Residence', bedrooms: 3, bathrooms: 2, maxGuests: 6, basePrice: 184,
+    description: 'A spacious three-bedroom home with a full kitchen, a shared living room and room for everyone to settle in between outings.',
+    amenities: ['WiFi', 'Kitchen', 'Parking', 'Washer', 'Air Conditioning'],
+  },
+];
+
+const expandedApartments = markets.flatMap((market, marketIndex) =>
+  propertyStyles.map((style, styleIndex) => ({
+    ...style,
+    title: `${style.title} · ${market.areas[styleIndex]}`,
+    location: `${market.areas[styleIndex]}, ${market.city}`,
+    description: `${style.description} Set in ${market.areas[styleIndex]}, ${market.city}, it is a convenient base for exploring the neighbourhood and getting around the city.`,
+    pricePerNight: style.basePrice + marketIndex * 6,
+  }))
+);
+
+const catalog = [...apartments, ...expandedApartments].map((apartment, index) => ({
+  ...apartment,
+  images: [0, 1, 2].map((offset) => unsplashImages[(index + offset) % unsplashImages.length]),
+}));
+
 async function main() {
   console.log('🌱 Seeding database...\n');
 
@@ -156,8 +211,8 @@ async function main() {
   });
   console.log(`✅ User:  ${testUser.email}`);
 
-  console.log('\n🏠 Creating apartments...');
-  for (const apt of apartments) {
+  console.log(`\nCreating ${catalog.length} apartments with Unsplash photos...`);
+  for (const apt of catalog) {
     const existing = await prisma.apartment.findFirst({ where: { title: apt.title, location: apt.location } });
     const created = existing
       ? await prisma.apartment.update({ where: { id: existing.id }, data: apt })
@@ -165,7 +220,7 @@ async function main() {
     console.log(`  ✅ ${created.title}`);
   }
 
-  console.log('\n✨ Seeding complete!');
+  console.log('\nSeeding complete.');
   console.log('\n📋 Demo credentials:');
   console.log('  Admin → admin@apartmentbooking.com / admin123');
   console.log('  User  → user@example.com / user123');

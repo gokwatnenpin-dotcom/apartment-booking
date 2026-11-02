@@ -109,7 +109,7 @@ npx prisma migrate dev --name init
 ```
 
 ### 6. Seed the Database
-Populate 8 realistic apartments with images, amenities, and default users:
+Populate 60 apartment listings with distinct Unsplash cover photos, three-photo galleries, amenities, and the default demo users. The seed matches existing listings by title and location, so running it again updates them instead of adding duplicates:
 
 ```bash
 npm run seed
