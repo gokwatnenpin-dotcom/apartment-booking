@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: only light;
   font-family: 'Inter', sans-serif;
   color: #1f2a30;
   background: #f5f2eb;

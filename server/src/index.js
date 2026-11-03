@@ -12,6 +12,9 @@ const errorHandler = require('./middleware/errorHandler');
 const prisma = require('./prisma');
 
 const app = express();
+// Browser Origin headers never include a trailing slash. Normalize the
+// configured Vercel URL so a pasted URL with a slash still matches.
+const clientOrigin = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
 
 // ── Security headers ──────────────────────────────────────────────────────────
 app.use(helmet());
@@ -19,7 +22,7 @@ app.use(helmet());
 // ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: clientOrigin,
     credentials: true,
   })
 );
