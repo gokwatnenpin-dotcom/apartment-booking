@@ -49,7 +49,7 @@ export default function AdminDashboard() {
       </aside>
 
       <section className="min-w-0">
-        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">Ziggy management</p><h1 className="mt-2 text-3xl font-bold">Dashboard</h1><p className="mt-2 text-sm text-slate">Bookings and listing activity at a glance.</p></div>{tab === 'apartments' && <Link to="/admin/apartments/new" className="btn-primary">Add apartment</Link>}</div>
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">Zestay management</p><h1 className="mt-2 text-3xl font-bold">Dashboard</h1><p className="mt-2 text-sm text-slate">Bookings and listing activity at a glance.</p></div>{tab === 'apartments' && <Link to="/admin/apartments/new" className="btn-primary">Add apartment</Link>}</div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {[['Bookings', bookings.length], ['Confirmed revenue', `$${revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`], ['Occupancy', `${occupancy}%`]].map(([label, value]) => <article key={label} className="rounded-card border border-sand-deep bg-white p-5"><p className="text-sm text-slate">{label}</p><p className="mt-2 font-heading text-2xl font-bold">{value}</p></article>)}
         </div>

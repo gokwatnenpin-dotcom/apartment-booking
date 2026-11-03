@@ -1,6 +1,6 @@
-# Ziggy — Apartment booking platform
+# Zestay — Apartment booking platform
 
-A full-stack apartment booking platform built around the Ziggy Brand & Build Blueprint in `Ziggy_Brand_and_Build_Blueprint.pdf`.
+A full-stack apartment booking platform built around the Zestay Brand & Build Blueprint in `Zestay_Brand_and_Build_Blueprint.pdf`.
 
 ---
 
@@ -12,14 +12,14 @@ A full-stack apartment booking platform built around the Ziggy Brand & Build Blu
 
 ## Product and visual direction
 
-Ziggy is the calm, no-nonsense way to book an apartment. The interface uses a warm Sand background, Ink text, Stone borders and one Terracotta action colour. Manrope is used for headings and Inter for body text. Gradients, decorative interface emoji and unnecessary shadows are excluded. The booking flow shows the nightly price calculation before the guest reserves.
+Zestay is the calm, no-nonsense way to book an apartment. The interface uses a warm Sand background, Ink text, Stone borders and one Terracotta action colour. Manrope is used for headings and Inter for body text. Gradients, decorative interface emoji and unnecessary shadows are excluded. The booking flow shows the nightly price calculation before the guest reserves.
 
 ---
 
 ## 📁 Repository Structure
 
 ```text
-apartment-booking/
+zestay/
 ├── package.json          # Root orchestration (concurrently)
 ├── .gitignore
 ├── README.md

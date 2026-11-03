@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import ZiggyLogo from './ZiggyLogo';
+import ZestayLogo from './ZestayLogo';
 
 export default function Footer() {
   return (
     <footer className="bg-ink text-sand">
       <div className="page-shell grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]">
         <div>
-          <ZiggyLogo reversed />
+          <ZestayLogo reversed />
           <p className="mt-4 max-w-sm text-sm leading-6 text-sand/75">A clear, trustworthy way to find and reserve a place to stay.</p>
         </div>
         <div>
@@ -25,7 +25,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-white/15">
-        <div className="page-shell py-5 text-xs text-sand/65">© {new Date().getFullYear()} Ziggy</div>
+        <div className="page-shell py-5 text-xs text-sand/65">© {new Date().getFullYear()} Zestay</div>
       </div>
     </footer>
   );

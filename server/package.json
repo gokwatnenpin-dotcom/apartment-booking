@@ -1,5 +1,5 @@
 {
-  "name": "apartment-booking-server",
+  "name": "zestay-server",
   "version": "1.0.0",
   "description": "Apartment Booking REST API",
   "main": "src/index.js",

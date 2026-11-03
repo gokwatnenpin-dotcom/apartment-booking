@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import ZiggyLogo from './ZiggyLogo';
+import ZestayLogo from './ZestayLogo';
 
 const navClass = ({ isActive }) => `text-sm font-medium transition-colors ${isActive ? 'text-accent' : 'text-ink hover:text-accent'}`;
 
@@ -27,7 +27,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-sand-deep bg-sand">
       <nav aria-label="Main navigation" className="page-shell flex h-[72px] items-center justify-between">
-        <ZiggyLogo />
+        <ZestayLogo />
         <div className="hidden items-center gap-8 md:flex">
           <NavLink to="/apartments" className={navClass}>Find a stay</NavLink>
           {accountLinks}
