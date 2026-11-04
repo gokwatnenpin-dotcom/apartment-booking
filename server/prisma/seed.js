@@ -11,7 +11,7 @@ const apartments = [
     description:
       'Stunning oceanfront property with breathtaking views, private pool, and direct beach access. Perfect for a romantic getaway or family vacation. Wake up to the sound of waves and enjoy spectacular sunsets from your private terrace.',
     location: 'Miami, Florida',
-    pricePerNight: 350,
+    pricePerNight: 240000,
     bedrooms: 4,
     bathrooms: 3,
     maxGuests: 8,
@@ -26,7 +26,7 @@ const apartments = [
     description:
       'Chic industrial-style loft in the heart of downtown. Walking distance to restaurants, galleries, and nightlife. Floor-to-ceiling windows offer stunning city views. Fully equipped kitchen and high-speed WiFi included.',
     location: 'New York, New York',
-    pricePerNight: 220,
+    pricePerNight: 95000,
     bedrooms: 1,
     bathrooms: 1,
     maxGuests: 2,
@@ -41,7 +41,7 @@ const apartments = [
     description:
       'Rustic yet comfortable cabin nestled in the mountains. Enjoy hiking trails, fresh air, and stunning mountain vistas right from your doorstep. Features a cozy fireplace, hot tub, and fully equipped kitchen.',
     location: 'Aspen, Colorado',
-    pricePerNight: 185,
+    pricePerNight: 145000,
     bedrooms: 2,
     bathrooms: 1,
     maxGuests: 4,
@@ -56,7 +56,7 @@ const apartments = [
     description:
       'Elegant studio apartment in the City of Light. Minutes from the Eiffel Tower, the Louvre, and the finest French dining. Authentically decorated with Haussmannian architecture and modern comforts.',
     location: 'Paris, France',
-    pricePerNight: 145,
+    pricePerNight: 80000,
     bedrooms: 1,
     bathrooms: 1,
     maxGuests: 2,
@@ -71,7 +71,7 @@ const apartments = [
     description:
       'Escape to this stunning eco-friendly villa surrounded by lush tropical rainforest. Wildlife sightings guaranteed! Features an infinity pool overlooking the jungle canopy, outdoor shower, and daily breakfast included.',
     location: 'Bali, Indonesia',
-    pricePerNight: 125,
+    pricePerNight: 65000,
     bedrooms: 1,
     bathrooms: 1,
     maxGuests: 2,
@@ -86,7 +86,7 @@ const apartments = [
     description:
       'Beautifully restored 18th-century farmhouse surrounded by vineyards and olive groves. Experience authentic Italian rural life with a private pool, wine cellar stocked with local wines, and panoramic countryside views.',
     location: 'Tuscany, Italy',
-    pricePerNight: 290,
+    pricePerNight: 280000,
     bedrooms: 5,
     bathrooms: 3,
     maxGuests: 10,
@@ -101,7 +101,7 @@ const apartments = [
     description:
       "Sleek, modern apartment in one of Tokyo's most vibrant neighborhoods. Impeccably designed with smart home technology and all modern conveniences. Walking distance to excellent dining, shopping, and metro.",
     location: 'Tokyo, Japan',
-    pricePerNight: 175,
+    pricePerNight: 155000,
     bedrooms: 2,
     bathrooms: 2,
     maxGuests: 4,
@@ -116,7 +116,7 @@ const apartments = [
     description:
       'Picture-perfect Swiss chalet with panoramic lake and Alpine views. Ski slopes in winter, hiking and watersports in summer. Features a private sauna, stone fireplace, and outdoor terrace with breathtaking views.',
     location: 'Interlaken, Switzerland',
-    pricePerNight: 320,
+    pricePerNight: 195000,
     bedrooms: 3,
     bathrooms: 2,
     maxGuests: 6,
@@ -146,22 +146,22 @@ const markets = [
 
 const propertyStyles = [
   {
-    title: 'Sunlit City Studio', bedrooms: 1, bathrooms: 1, maxGuests: 2, basePrice: 92,
+    title: 'Sunlit City Studio', bedrooms: 1, bathrooms: 1, maxGuests: 2, basePrice: 65000,
     description: 'A bright, carefully arranged studio with a comfortable queen bed, a practical kitchenette and a quiet place to unwind after a day out.',
     amenities: ['WiFi', 'Kitchen', 'Washer', 'Heating'],
   },
   {
-    title: 'Courtyard Apartment', bedrooms: 2, bathrooms: 1, maxGuests: 4, basePrice: 138,
+    title: 'Courtyard Apartment', bedrooms: 2, bathrooms: 1, maxGuests: 4, basePrice: 145000,
     description: 'A calm two-bedroom apartment with a private balcony, a dining space for four and an equipped kitchen for easy meals at home.',
     amenities: ['WiFi', 'Kitchen', 'Air Conditioning', 'Balcony', 'Washer'],
   },
   {
-    title: 'Open-plan Design Loft', bedrooms: 1, bathrooms: 1, maxGuests: 2, basePrice: 126,
+    title: 'Open-plan Design Loft', bedrooms: 1, bathrooms: 1, maxGuests: 2, basePrice: 85000,
     description: 'An open-plan loft with tall windows, a dedicated work table and simple, comfortable furnishings close to local cafés and transit.',
     amenities: ['WiFi', 'Kitchen', 'Workspace', 'Air Conditioning'],
   },
   {
-    title: 'Family Corner Residence', bedrooms: 3, bathrooms: 2, maxGuests: 6, basePrice: 184,
+    title: 'Family Corner Residence', bedrooms: 3, bathrooms: 2, maxGuests: 6, basePrice: 195000,
     description: 'A spacious three-bedroom home with a full kitchen, a shared living room and room for everyone to settle in between outings.',
     amenities: ['WiFi', 'Kitchen', 'Parking', 'Washer', 'Air Conditioning'],
   },
@@ -175,7 +175,7 @@ const expandedApartments = markets.flatMap((market, marketIndex) =>
       title: `${style.title} · ${market.areas[styleIndex]}`,
       location: `${market.areas[styleIndex]}, ${market.city}`,
       description: `${style.description} Set in ${market.areas[styleIndex]}, ${market.city}, it is a convenient base for exploring the neighbourhood and getting around the city.`,
-      pricePerNight: basePrice + marketIndex * 6,
+      pricePerNight: basePrice + marketIndex * 1000,
     };
   })
 );

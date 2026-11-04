@@ -53,7 +53,7 @@ export default function Apartments() {
         <button type="button" onClick={clear} className="text-xs font-semibold text-accent underline-offset-4 hover:underline">Clear all</button>
       </div>
       <label className="block"><span className="mb-1.5 block text-sm font-semibold">Location</span><input className="input-field" value={filters.location} onChange={(e) => change('location', e.target.value)} placeholder="City or neighbourhood" /></label>
-      <fieldset><legend className="mb-1.5 text-sm font-semibold">Price per night</legend><div className="grid grid-cols-2 gap-2"><label><span className="sr-only">Minimum price</span><input type="number" min="0" className="input-field" value={filters.minPrice} onChange={(e) => change('minPrice', e.target.value)} placeholder="Min $" /></label><label><span className="sr-only">Maximum price</span><input type="number" min="0" className="input-field" value={filters.maxPrice} onChange={(e) => change('maxPrice', e.target.value)} placeholder="Max $" /></label></div></fieldset>
+      <fieldset><legend className="mb-1.5 text-sm font-semibold">Price per night (NGN)</legend><div className="grid grid-cols-2 gap-2"><label><span className="sr-only">Minimum price</span><input type="number" min="0" className="input-field" value={filters.minPrice} onChange={(e) => change('minPrice', e.target.value)} placeholder="Min ₦" /></label><label><span className="sr-only">Maximum price</span><input type="number" min="0" className="input-field" value={filters.maxPrice} onChange={(e) => change('maxPrice', e.target.value)} placeholder="Max ₦" /></label></div></fieldset>
       <div className="grid grid-cols-2 gap-3">
         <label className="block"><span className="mb-1.5 block text-sm font-semibold">Bedrooms</span><select className="input-field" value={filters.bedrooms} onChange={(e) => change('bedrooms', e.target.value)}><option value="">Any</option>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}{n === 5 ? '+' : ''}</option>)}</select></label>
         <label className="block"><span className="mb-1.5 block text-sm font-semibold">Guests</span><input type="number" min="1" className="input-field" value={filters.guests} onChange={(e) => change('guests', e.target.value)} placeholder="Any" /></label>
@@ -66,7 +66,7 @@ export default function Apartments() {
   const activeChips = Object.entries(filters).flatMap(([key, value]) => {
     if (Array.isArray(value)) return value.map((item) => ({ key: `amenities-${item}`, label: item, clear: () => toggleAmenity(item) }));
     if (!value) return [];
-    const names = { location: 'Location', minPrice: 'From $', maxPrice: 'To $', guests: 'Guests', bedrooms: 'Bedrooms', checkIn: 'Check-in', checkOut: 'Check-out' };
+    const names = { location: 'Location', minPrice: 'From ₦', maxPrice: 'To ₦', guests: 'Guests', bedrooms: 'Bedrooms', checkIn: 'Check-in', checkOut: 'Check-out' };
     return [{ key, label: `${names[key]} ${value}`, clear: () => change(key, '') }];
   });
 

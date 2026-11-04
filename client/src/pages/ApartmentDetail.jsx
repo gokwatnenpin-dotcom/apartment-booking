@@ -4,18 +4,10 @@ import toast from 'react-hot-toast';
 import api from '../api/axios';
 import ImageGallery from '../components/ImageGallery';
 import { useAuth } from '../context/AuthContext';
+import { formatNaira } from '../utils/currency';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FALLBACK_MAX_GUESTS = 1;
-
-function money(value) {
-  const amount = Number(value);
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(Number.isFinite(amount) ? amount : 0);
-}
 
 function normalizeApartment(data) {
   if (!data || typeof data !== 'object') return null;
@@ -178,11 +170,11 @@ function BookingForm({
       {nights > 0 && (
         <div className="space-y-3 border-t border-sand-deep pt-4 text-sm">
           <div className="flex justify-between text-slate">
-            <span>{money(apartment.pricePerNight)} × {nights} {nights === 1 ? 'night' : 'nights'}</span>
-            <span>{money(total)}</span>
+            <span>{formatNaira(apartment.pricePerNight)} × {nights} {nights === 1 ? 'night' : 'nights'}</span>
+            <span>{formatNaira(total)}</span>
           </div>
           <div className="flex justify-between border-t border-sand-deep pt-3 font-bold">
-            <span>Total</span><span>{money(total)}</span>
+            <span>Total</span><span>{formatNaira(total)}</span>
           </div>
         </div>
       )}
@@ -351,7 +343,7 @@ export default function ApartmentDetail() {
           <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{apartment.title}</h1>
         </div>
         <p className="font-heading text-lg font-bold">
-          {money(apartment.pricePerNight)} <span className="font-body text-sm font-normal text-slate">/ night</span>
+          {formatNaira(apartment.pricePerNight)} <span className="font-body text-sm font-normal text-slate">/ night</span>
         </p>
       </header>
 
@@ -386,14 +378,14 @@ export default function ApartmentDetail() {
         </div>
 
         <aside ref={bookingCardRef} className="sticky top-24 rounded-card border border-sand-deep bg-white p-5 sm:p-6">
-          <p className="font-heading text-xl font-bold">{money(apartment.pricePerNight)} <span className="font-body text-sm font-normal text-slate">/ night</span></p>
+          <p className="font-heading text-xl font-bold">{formatNaira(apartment.pricePerNight)} <span className="font-body text-sm font-normal text-slate">/ night</span></p>
           <BookingForm {...bookingFormProps} />
         </aside>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-sand-deep bg-white px-5 py-3 sm:hidden">
         <p className="font-heading font-bold">
-          {nights > 0 ? money(total) : money(apartment.pricePerNight)}
+          {nights > 0 ? formatNaira(total) : formatNaira(apartment.pricePerNight)}
           <span className="ml-1 font-body text-xs font-normal text-slate">
             {nights > 0 ? `· ${nights} ${nights === 1 ? 'night' : 'nights'}` : '/ night'}
           </span>
