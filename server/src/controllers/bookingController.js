@@ -3,8 +3,8 @@ const prisma = require('../prisma');
 // POST /api/bookings
 const create = async (req, res, next) => {
   try {
-    const { apartmentId, checkIn, checkOut, guests } = req.body;
-    const userId = req.user.id;
+    const { apartmentId, checkIn, checkOut, guests, guestName, guestEmail } = req.body;
+    const userId = req.user?.id || null;
 
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
@@ -65,6 +65,8 @@ const create = async (req, res, next) => {
       return tx.booking.create({
         data: {
           userId,
+          guestName: userId ? null : guestName.trim(),
+          guestEmail: userId ? null : guestEmail.trim(),
           apartmentId,
           checkIn: checkInDate,
           checkOut: checkOutDate,

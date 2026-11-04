@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ImageGallery from '../components/ImageGallery';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -26,13 +26,15 @@ const normalizeApartment = (value) => {
 export default function ApartmentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const [query] = useSearchParams();
   const { user } = useAuth();
   const [apartment, setApartment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestConfirmation, setGuestConfirmation] = useState(null);
   const [checkIn, setCheckIn] = useState(query.get('checkIn') || '');
   const [checkOut, setCheckOut] = useState(query.get('checkOut') || '');
   const [guests, setGuests] = useState(Number(query.get('guests') || 1));
@@ -69,16 +71,25 @@ export default function ApartmentDetail() {
     if (new Date(`${checkIn}T00:00:00`) < new Date(`${today}T00:00:00`)) { setDateError('Check-in must be today or later.'); return; }
     if (Number(guests) < 1 || Number(guests) > apartment.maxGuests) { setDateError(`Choose 1 to ${apartment.maxGuests} guests.`); return; }
     if (conflict) { setDateError('Those dates are taken. Try another date range.'); return; }
-    if (!user) {
-      const search = new URLSearchParams({ checkIn, checkOut, guests: String(guests) });
-      navigate('/login', { state: { from: { pathname: location.pathname, search: `?${search}` } } });
-      return;
-    }
+    if (!user && guestName.trim().length < 2) { setDateError('Enter your name to continue.'); return; }
+    if (!user && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) { setDateError('Enter a valid email address.'); return; }
     setBookingLoading(true);
     try {
-      await api.post('/bookings', { apartmentId: id, checkIn, checkOut, guests: Number(guests) });
-      toast.success('Your stay is confirmed.');
-      navigate('/bookings');
+      const { data } = await api.post('/bookings', {
+        apartmentId: id,
+        checkIn,
+        checkOut,
+        guests: Number(guests),
+        guestName: guestName.trim() || user?.name || '',
+        guestEmail: guestEmail.trim() || user?.email || '',
+      });
+      if (data.userId) {
+        toast.success('Your stay is confirmed.');
+        navigate('/bookings');
+      } else {
+        setGuestConfirmation(data);
+        toast.success('Your stay is confirmed.');
+      }
     } catch (error) {
       const message = error.response?.data?.message || 'We could not reserve those dates. Please try again.';
       setDateError(message);
@@ -110,21 +121,27 @@ export default function ApartmentDetail() {
           <p className="font-heading text-xl font-bold">{currency(apartment.pricePerNight)} <span className="font-body text-sm font-normal text-slate">/ night</span></p>
           <form ref={bookingFormRef} className="mt-5 space-y-4" onSubmit={book}>
             <div className="grid grid-cols-2 overflow-hidden rounded-control border border-sand-deep">
-              <label className="border-r border-sand-deep p-3"><span className="mb-1 block text-[11px] font-bold uppercase tracking-wide">Check-in</span><input ref={checkInInputRef} aria-label="Check-in date" type="date" required min={today} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="w-full bg-transparent text-sm" /></label>
-              <label className="p-3"><span className="mb-1 block text-[11px] font-bold uppercase tracking-wide">Check-out</span><input aria-label="Check-out date" type="date" required min={checkIn || today} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="w-full bg-transparent text-sm" /></label>
+              <label className="border-r border-sand-deep p-3"><span className="mb-1 block text-[11px] font-bold uppercase tracking-wide">Check-in</span><input ref={checkInInputRef} aria-label="Check-in date" type="date" required min={today} value={checkIn} onChange={(e) => { setCheckIn(e.target.value); setGuestConfirmation(null); }} className="w-full bg-transparent text-sm" /></label>
+              <label className="p-3"><span className="mb-1 block text-[11px] font-bold uppercase tracking-wide">Check-out</span><input aria-label="Check-out date" type="date" required min={checkIn || today} value={checkOut} onChange={(e) => { setCheckOut(e.target.value); setGuestConfirmation(null); }} className="w-full bg-transparent text-sm" /></label>
             </div>
-            <label className="block rounded-control border border-sand-deep p-3"><span className="mb-1 block text-[11px] font-bold uppercase tracking-wide">Guests</span><select value={guests} onChange={(e) => setGuests(Number(e.target.value))} className="w-full bg-transparent text-sm">{Array.from({ length: apartment.maxGuests }, (_, index) => index + 1).map((count) => <option key={count} value={count}>{count} {count === 1 ? 'guest' : 'guests'}</option>)}</select></label>
+            <label className="block rounded-control border border-sand-deep p-3"><span className="mb-1 block text-[11px] font-bold uppercase tracking-wide">Guests</span><select value={guests} onChange={(e) => { setGuests(Number(e.target.value)); setGuestConfirmation(null); }} className="w-full bg-transparent text-sm">{Array.from({ length: apartment.maxGuests }, (_, index) => index + 1).map((count) => <option key={count} value={count}>{count} {count === 1 ? 'guest' : 'guests'}</option>)}</select></label>
+            {!user && <>
+              <label className="block rounded-control border border-sand-deep p-3"><span className="mb-1 block text-[11px] font-bold uppercase tracking-wide">Your name</span><input type="text" autoComplete="name" required minLength={2} maxLength={120} value={guestName} onChange={(e) => { setGuestName(e.target.value); setGuestConfirmation(null); }} className="w-full bg-transparent text-sm" placeholder="Name for the reservation" /></label>
+              <label className="block rounded-control border border-sand-deep p-3"><span className="mb-1 block text-[11px] font-bold uppercase tracking-wide">Email</span><input type="email" autoComplete="email" required value={guestEmail} onChange={(e) => { setGuestEmail(e.target.value); setGuestConfirmation(null); }} className="w-full bg-transparent text-sm" placeholder="Where we can reach you" /></label>
+              <p className="text-xs text-slate">No account needed. Your contact details will be shared with the host for this reservation.</p>
+            </>}
+            {guestConfirmation && <div role="status" className="rounded-control border border-success/30 bg-success-tint p-3 text-sm text-success"><p className="font-bold">Reservation confirmed</p><p className="mt-1">Booking reference: {guestConfirmation.id}</p><p className="mt-1 text-xs">Save this reference. This booking is not linked to an account.</p></div>}
             {dateError && <p role="alert" className="rounded-control border border-danger/30 bg-danger-tint px-3 py-2 text-sm text-danger">{dateError}</p>}
             {conflict && <p role="status" className="text-sm font-medium text-danger">Those dates are taken. Try another date range.</p>}
             {nights > 0 && <div className="space-y-3 border-t border-sand-deep pt-4 text-sm"><div className="flex justify-between text-slate"><span>{currency(apartment.pricePerNight)} × {nights} {nights === 1 ? 'night' : 'nights'}</span><span>{currency(total)}</span></div><div className="flex justify-between border-t border-sand-deep pt-3 font-bold"><span>Total</span><span>{currency(total)}</span></div></div>}
-            <button type="submit" disabled={bookingLoading || conflict} className="btn-primary w-full">{bookingLoading ? 'Reserving…' : 'Reserve stay'}</button>
+            <button type="submit" disabled={bookingLoading || conflict || Boolean(guestConfirmation)} className="btn-primary w-full">{bookingLoading ? 'Reserving…' : guestConfirmation ? 'Reservation confirmed' : 'Reserve stay'}</button>
             <p className="text-center text-xs text-slate">You can review the total before confirming.</p>
           </form>
         </aside>
       </div>
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-sand-deep bg-white px-5 py-3 sm:hidden">
         <p className="font-heading font-bold">{nights > 0 ? currency(total) : currency(apartment.pricePerNight)}<span className="ml-1 font-body text-xs font-normal text-slate">{nights > 0 ? `· ${nights} ${nights === 1 ? 'night' : 'nights'}` : '/ night'}</span></p>
-        <button type="button" disabled={Boolean(conflict)} onClick={() => {
+        <button type="button" disabled={Boolean(conflict) || Boolean(guestConfirmation)} onClick={() => {
           if (nights > 0 && bookingFormRef.current) bookingFormRef.current.requestSubmit();
           else { bookingCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); window.setTimeout(() => checkInInputRef.current?.focus(), 250); }
         }} className="btn-primary min-h-10 px-5">Reserve</button>
