@@ -17,6 +17,9 @@ async function initializePaystack(booking) {
 // POST /api/bookings
 const create = async (req, res, next) => {
   try {
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      return res.status(503).json({ message: 'Online payments are not configured yet. Please try again later.' });
+    }
     const { apartmentId, checkIn, checkOut, guests, guestName, guestEmail } = req.body;
     const userId = req.user?.id || null;
 
@@ -98,7 +101,14 @@ const create = async (req, res, next) => {
       });
     }, { isolationLevel: 'Serializable' });
 
-    const paymentUrl = await initializePaystack(booking);
+    let paymentUrl;
+    try {
+      paymentUrl = await initializePaystack(booking);
+    } catch (paymentError) {
+      await prisma.booking.update({ where: { id: booking.id }, data: { status: 'CANCELLED' } });
+      console.error('Paystack initialization failed:', paymentError.message);
+      return res.status(503).json({ message: 'We could not start the payment. Please try again shortly.' });
+    }
     await sendBookingEmail(booking, paymentUrl).catch((error) => console.error('Booking email failed:', error.message));
     res.status(201).json({ ...booking, paymentUrl });
   } catch (error) {
