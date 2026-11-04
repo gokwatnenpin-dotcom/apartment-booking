@@ -8,6 +8,21 @@ import toast from 'react-hot-toast';
 const day = 24 * 60 * 60 * 1000;
 const currency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value));
 
+const normalizeApartment = (value) => {
+  if (!value || typeof value !== 'object') return null;
+
+  return {
+    ...value,
+    title: typeof value.title === 'string' ? value.title : 'Apartment',
+    description: typeof value.description === 'string' ? value.description : '',
+    location: typeof value.location === 'string' ? value.location : '',
+    images: Array.isArray(value.images) ? value.images.filter((image) => typeof image === 'string' && image.trim()) : [],
+    amenities: Array.isArray(value.amenities) ? value.amenities.filter((amenity) => typeof amenity === 'string') : [],
+    bookings: Array.isArray(value.bookings) ? value.bookings : [],
+    maxGuests: Math.max(1, Number.parseInt(value.maxGuests, 10) || 1),
+  };
+};
+
 export default function ApartmentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -33,7 +48,7 @@ export default function ApartmentDetail() {
     setFailed(false);
     setApartment(null);
     api.get(`/apartments/${id}`)
-      .then(({ data }) => { if (!cancelled) setApartment(data); })
+      .then(({ data }) => { if (!cancelled) setApartment(normalizeApartment(data)); })
       .catch(() => { if (!cancelled) setFailed(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
