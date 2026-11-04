@@ -1,21 +1,18 @@
 import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ZestayLogo from './ZestayLogo';
 
 const navClass = ({ isActive }) => `text-sm font-medium transition-colors ${isActive ? 'text-accent' : 'text-ink hover:text-accent'}`;
 
 export default function Navbar() {
-  const { user, logout, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
-  const signOut = () => { logout(); close(); navigate('/'); };
   const accountLinks = user ? (
     <>
-      <NavLink to="/bookings" onClick={close} className={navClass}>My bookings</NavLink>
+      <NavLink to="/profile" onClick={close} className={navClass}>Profile</NavLink>
       {isAdmin && <NavLink to="/admin" onClick={close} className={navClass}>Admin</NavLink>}
-      <button onClick={signOut} className="text-left text-sm font-medium text-ink hover:text-accent">Sign out</button>
     </>
   ) : (
     <>

@@ -12,7 +12,7 @@ const Apartments = lazy(() => import('./pages/Apartments'));
 const ApartmentDetail = lazy(() => import('./pages/ApartmentDetail'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
-const MyBookings = lazy(() => import('./pages/MyBookings'));
+const Profile = lazy(() => import('./pages/Profile'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ApartmentForm = lazy(() => import('./pages/ApartmentForm'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -33,14 +33,18 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
-            path="/bookings"
+            path="/profile"
             element={
               <ProtectedRoute>
-                <MyBookings />
+                <Profile />
               </ProtectedRoute>
             }
           />
-          <Route path="/my-bookings" element={<Navigate to="/bookings" replace />} />
+          <Route
+            path="/bookings"
+            element={<Navigate to="/profile" replace />}
+          />
+          <Route path="/my-bookings" element={<Navigate to="/profile" replace />} />
           <Route
             path="/admin"
             element={
