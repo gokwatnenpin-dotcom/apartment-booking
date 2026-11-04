@@ -11,7 +11,7 @@ const apartments = [
     description:
       'Stunning oceanfront property with breathtaking views, private pool, and direct beach access. Perfect for a romantic getaway or family vacation. Wake up to the sound of waves and enjoy spectacular sunsets from your private terrace.',
     location: 'Miami, Florida',
-    pricePerNight: 240000,
+    pricePerNight: 140000,
     bedrooms: 4,
     bathrooms: 3,
     maxGuests: 8,
@@ -86,7 +86,7 @@ const apartments = [
     description:
       'Beautifully restored 18th-century farmhouse surrounded by vineyards and olive groves. Experience authentic Italian rural life with a private pool, wine cellar stocked with local wines, and panoramic countryside views.',
     location: 'Tuscany, Italy',
-    pricePerNight: 280000,
+    pricePerNight: 180000,
     bedrooms: 5,
     bathrooms: 3,
     maxGuests: 10,
@@ -116,7 +116,7 @@ const apartments = [
     description:
       'Picture-perfect Swiss chalet with panoramic lake and Alpine views. Ski slopes in winter, hiking and watersports in summer. Features a private sauna, stone fireplace, and outdoor terrace with breathtaking views.',
     location: 'Interlaken, Switzerland',
-    pricePerNight: 195000,
+    pricePerNight: 95000,
     bedrooms: 3,
     bathrooms: 2,
     maxGuests: 6,
@@ -175,7 +175,10 @@ const expandedApartments = markets.flatMap((market, marketIndex) =>
       title: `${style.title} · ${market.areas[styleIndex]}`,
       location: `${market.areas[styleIndex]}, ${market.city}`,
       description: `${style.description} Set in ${market.areas[styleIndex]}, ${market.city}, it is a convenient base for exploring the neighbourhood and getting around the city.`,
-      pricePerNight: basePrice + marketIndex * 1000,
+      pricePerNight: (() => {
+        const price = basePrice + marketIndex * 1000;
+        return price > 190000 ? price - 100000 : price;
+      })(),
     };
   })
 );
