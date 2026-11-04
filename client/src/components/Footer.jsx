@@ -21,6 +21,8 @@ export default function Footer() {
           <div className="mt-4 flex flex-col gap-3 text-sm text-sand/75">
             <Link to="/login" className="hover:text-white">Sign in</Link>
             <Link to="/register" className="hover:text-white">Create account</Link>
+            <Link to="/privacy" className="hover:text-white">Privacy and cookies</Link>
+            <Link to="/unsubscribe" className="hover:text-white">Unsubscribe</Link>
           </div>
         </div>
       </div>

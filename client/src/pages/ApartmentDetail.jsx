@@ -284,13 +284,7 @@ export default function ApartmentDetail() {
         guestEmail: guestEmail.trim() || user?.email || '',
       });
 
-      if (data.userId) {
-        toast.success('Your stay is confirmed.');
-        navigate('/bookings');
-      } else {
-        setGuestConfirmation(data);
-        toast.success('Your stay is confirmed.');
-      }
+      window.location.assign(data.paymentUrl);
     } catch (error) {
       const message = error.response?.data?.message || 'We could not reserve those dates. Please try again.';
       setBookingError(message);

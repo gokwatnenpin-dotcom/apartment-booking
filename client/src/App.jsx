@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import LoadingSpinner from './components/LoadingSpinner';
 import RouteErrorBoundary from './components/RouteErrorBoundary';
+import CookieNotice from './components/CookieNotice';
 
 const Home = lazy(() => import('./pages/Home'));
 const Apartments = lazy(() => import('./pages/Apartments'));
@@ -16,6 +17,8 @@ const Profile = lazy(() => import('./pages/Profile'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ApartmentForm = lazy(() => import('./pages/ApartmentForm'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
 
 export default function App() {
   const location = useLocation();
@@ -32,6 +35,9 @@ export default function App() {
           <Route path="/apartments/:id" element={<ApartmentDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
+          <Route path="/unsubscribe" element={<Privacy />} />
           <Route
             path="/profile"
             element={
@@ -67,6 +73,7 @@ export default function App() {
         </RouteErrorBoundary>
       </main>
       <Footer />
+      <CookieNotice />
     </div>
   );
 }

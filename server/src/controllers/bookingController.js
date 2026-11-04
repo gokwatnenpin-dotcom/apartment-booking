@@ -1,4 +1,18 @@
 const prisma = require('../prisma');
+const { sendBookingEmail } = require('../services/brevo');
+
+async function initializePaystack(booking) {
+  if (!process.env.PAYSTACK_SECRET_KEY) throw new Error('Paystack is not configured');
+  const email = booking.user?.email || booking.guestEmail;
+  const response = await fetch('https://api.paystack.co/transaction/initialize', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, amount: Math.round(Number(booking.totalPrice) * 100), currency: 'NGN', reference: booking.paymentReference, callback_url: `${process.env.CLIENT_URL}/payment/callback`, metadata: { bookingId: booking.id } }),
+  });
+  const result = await response.json();
+  if (!response.ok || !result.status) throw new Error(result.message || 'Paystack could not initialize payment');
+  return result.data.authorization_url;
+}
 
 // POST /api/bookings
 const create = async (req, res, next) => {
@@ -72,7 +86,8 @@ const create = async (req, res, next) => {
           checkOut: checkOutDate,
           guests: parseInt(guests),
           totalPrice,
-          status: 'CONFIRMED',
+          status: 'PENDING',
+          paymentReference: `zestay_${Date.now()}_${require('crypto').randomBytes(6).toString('hex')}`,
         },
         include: {
           apartment: {
@@ -83,7 +98,9 @@ const create = async (req, res, next) => {
       });
     }, { isolationLevel: 'Serializable' });
 
-    res.status(201).json(booking);
+    const paymentUrl = await initializePaystack(booking);
+    await sendBookingEmail(booking, paymentUrl).catch((error) => console.error('Booking email failed:', error.message));
+    res.status(201).json({ ...booking, paymentUrl });
   } catch (error) {
     // PostgreSQL serialization failures mean a concurrent booking transaction
     // won the race. Treat that outcome as an unavailable date range.
@@ -92,6 +109,31 @@ const create = async (req, res, next) => {
     }
     next(error);
   }
+};
+
+const verifyPayment = async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findUnique({ where: { paymentReference: req.query.reference } });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(booking.paymentReference)}`, { headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` } });
+    const result = await response.json();
+    if (!response.ok || result.data?.status !== 'success' || Number(result.data.amount) !== Math.round(Number(booking.totalPrice) * 100)) return res.status(402).json({ message: 'Payment has not been confirmed' });
+    const paid = await prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED', paidAt: new Date() } });
+    res.json({ status: paid.status, bookingId: paid.id });
+  } catch (error) { next(error); }
+};
+
+const paystackWebhook = async (req, res) => {
+  const crypto = require('crypto');
+  const signature = req.headers['x-paystack-signature'];
+  const expected = crypto.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY).update(JSON.stringify(req.body)).digest('hex');
+  if (!signature || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return res.sendStatus(401);
+  if (req.body.event === 'charge.success') {
+    const data = req.body.data;
+    const booking = await prisma.booking.findUnique({ where: { paymentReference: data.reference } });
+    if (booking && Number(data.amount) === Math.round(Number(booking.totalPrice) * 100)) await prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED', paidAt: new Date() } });
+  }
+  res.sendStatus(200);
 };
 
 // GET /api/bookings/my
@@ -184,4 +226,4 @@ const getAll = async (req, res, next) => {
   }
 };
 
-module.exports = { create, getMy, cancel, getAll };
+module.exports = { create, getMy, cancel, getAll, verifyPayment, paystackWebhook };

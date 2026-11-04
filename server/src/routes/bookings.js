@@ -1,12 +1,14 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { create, getMy, cancel, getAll } = require('../controllers/bookingController');
+const { create, getMy, cancel, getAll, verifyPayment, paystackWebhook } = require('../controllers/bookingController');
 const authenticate = require('../middleware/auth');
 const optionalAuth = require('../middleware/optionalAuth');
 const requireAdmin = require('../middleware/admin');
 const validate = require('../middleware/validate');
 
 const router = express.Router();
+router.get('/payment/verify', verifyPayment);
+router.post('/paystack/webhook', paystackWebhook);
 
 // /my MUST come before /:id to avoid route conflict
 router.get('/my', authenticate, getMy);

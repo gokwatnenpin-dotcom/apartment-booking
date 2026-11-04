@@ -60,6 +60,8 @@ model Booking {
   guests      Int
   totalPrice  Decimal       @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
+  paymentReference String?  @unique
+  paidAt      DateTime?
   user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   apartment   Apartment     @relation(fields: [apartmentId], references: [id], onDelete: Restrict)
   createdAt   DateTime      @default(now())
