@@ -29,8 +29,10 @@ export default function AdminDashboard() {
   const occupancy = apartments.length ? Math.round((occupiedApartmentIds.size / apartments.length) * 100) : 0;
 
   const cancel = async (booking) => {
-    if (!window.confirm('Cancel this booking?')) return;
-    try { await api.patch(`/bookings/${booking.id}/cancel`); setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, status: 'CANCELLED' } : item)); toast.success('Booking cancelled.'); }
+    const reason = window.prompt('Why are you cancelling this booking?');
+    if (reason === null) return;
+    if (reason.trim().length < 5) { toast.error('Please enter a reason of at least 5 characters.'); return; }
+    try { await api.patch(`/bookings/${booking.id}/cancel`, { reason: reason.trim() }); setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, status: 'CANCELLED' } : item)); toast.success('Booking cancelled.'); }
     catch (err) { toast.error(err.response?.data?.message || 'We couldn’t cancel this booking.'); }
   };
   const removeApartment = async (apartment) => {
