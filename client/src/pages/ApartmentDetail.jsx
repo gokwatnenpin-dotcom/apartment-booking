@@ -99,7 +99,8 @@ function BookingForm({
   total,
   conflict,
   error,
-  loading,
+  reserveLoading,
+  paymentLoading,
   user,
   guestName,
   guestEmail,
@@ -180,10 +181,10 @@ function BookingForm({
         </div>
       )}
 
-      <button type="submit" disabled={loading || conflict || Boolean(confirmation)} className="btn-primary w-full">
-        {loading ? 'Reserving…' : 'Reserve stay'}
+      <button type="submit" disabled={reserveLoading || paymentLoading || conflict || Boolean(confirmation)} className="btn-primary w-full">
+        {reserveLoading ? 'Reserving…' : 'Reserve stay'}
       </button>
-      {confirmation && <button type="button" onClick={onContinuePayment} disabled={loading} className="btn-secondary w-full">Continue to pay</button>}
+      {confirmation && <button type="button" onClick={onContinuePayment} disabled={paymentLoading} className="btn-secondary w-full">{paymentLoading ? 'Opening Paystack…' : 'Continue to pay'}</button>}
       <p className="text-center text-xs text-slate">You can review the total before confirming.</p>
     </form>
   );
@@ -198,6 +199,7 @@ export default function ApartmentDetail() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
@@ -299,7 +301,7 @@ export default function ApartmentDetail() {
 
   const continueToPayment = async () => {
     if (!guestConfirmation?.paymentToken) return;
-    setBookingLoading(true);
+    setPaymentLoading(true);
     try {
       const { data } = await api.post(`/bookings/payment/continue/${guestConfirmation.paymentToken}`);
       window.location.assign(data.paymentUrl);
@@ -307,7 +309,7 @@ export default function ApartmentDetail() {
       const message = error.response?.data?.message || 'We could not start payment. Try again later.';
       setBookingError(message);
       toast.error(message);
-    } finally { setBookingLoading(false); }
+    } finally { setPaymentLoading(false); }
   };
 
   const changeDate = (field, value) => {
@@ -329,7 +331,8 @@ export default function ApartmentDetail() {
     total,
     conflict,
     error: bookingError,
-    loading: bookingLoading,
+    reserveLoading: bookingLoading,
+    paymentLoading,
     user,
     guestName,
     guestEmail,
