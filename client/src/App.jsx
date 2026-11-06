@@ -20,6 +20,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
 const PaymentContinue = lazy(() => import('./pages/PaymentContinue'));
+const CancelBooking = lazy(() => import('./pages/CancelBooking'));
 
 export default function App() {
   const location = useLocation();
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="/payment/continue" element={<PaymentContinue />} />
+          <Route path="/bookings/:id/cancel" element={<ProtectedRoute><CancelBooking /></ProtectedRoute>} />
           <Route path="/unsubscribe" element={<Privacy />} />
           <Route
             path="/profile"
