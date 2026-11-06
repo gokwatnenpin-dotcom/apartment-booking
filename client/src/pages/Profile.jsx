@@ -23,9 +23,11 @@ export default function Profile() {
 
   const filteredBookings = useMemo(() => {
     const now = new Date();
-    return bookings.filter((booking) => tab === 'upcoming'
-      ? booking.status !== 'CANCELLED' && new Date(booking.checkOut) >= now
-      : booking.status === 'CANCELLED' || new Date(booking.checkOut) < now);
+    return bookings.filter((booking) => {
+      if (tab === 'cancelled') return booking.status === 'CANCELLED';
+      if (booking.status === 'CANCELLED') return false;
+      return tab === 'upcoming' ? new Date(booking.checkOut) >= now : new Date(booking.checkOut) < now;
+    });
   }, [bookings, tab]);
 
   const handleLogout = () => {
@@ -58,7 +60,7 @@ export default function Profile() {
         </div>
 
         <div className="mt-6 flex gap-6 border-b border-sand-deep" role="tablist" aria-label="Booking history">
-          {['upcoming', 'past'].map((value) => (
+          {['upcoming', 'past', 'cancelled'].map((value) => (
             <button
               key={value}
               type="button"
@@ -67,7 +69,7 @@ export default function Profile() {
               onClick={() => setTab(value)}
               className={`border-b-2 px-1 pb-3 text-sm font-semibold capitalize ${tab === value ? 'border-ink text-ink' : 'border-transparent text-slate'}`}
             >
-              {value} stays
+              {value === 'cancelled' ? 'Cancelled bookings' : `${value} stays`}
             </button>
           ))}
         </div>
@@ -89,9 +91,9 @@ export default function Profile() {
           </div>
         ) : (
           <div className="mt-6 rounded-card border border-sand-deep bg-white px-6 py-12 text-center">
-            <h3 className="font-heading text-lg font-bold">{tab === 'upcoming' ? 'No upcoming stays' : 'No past stays yet'}</h3>
+            <h3 className="font-heading text-lg font-bold">{tab === 'upcoming' ? 'No upcoming stays' : tab === 'past' ? 'No past stays yet' : 'No cancelled bookings'}</h3>
             <p className="mx-auto mt-2 max-w-sm text-sm text-slate">
-              {tab === 'upcoming' ? 'When you reserve a place, its details will appear here.' : 'Completed stays and cancelled bookings will appear here.'}
+              {tab === 'upcoming' ? 'When you reserve a place, its details will appear here.' : tab === 'past' ? 'Completed stays will appear here.' : 'Bookings you cancel will appear here.'}
             </p>
             {tab === 'upcoming' && <Link to="/apartments" className="btn-primary mt-5">Find a stay</Link>}
           </div>
