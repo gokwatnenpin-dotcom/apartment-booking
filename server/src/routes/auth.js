@@ -14,7 +14,7 @@ router.post(
   registerLimiter,
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('email').isEmail({ require_tld: true, allow_utf8_local_part: false, domain_specific_validation: true }).normalizeEmail().withMessage('Enter a valid email address, such as name@example.com'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   ],
   validate,
@@ -25,7 +25,7 @@ router.post(
   '/login',
   loginLimiter,
   [
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('email').isEmail({ require_tld: true, allow_utf8_local_part: false, domain_specific_validation: true }).normalizeEmail().withMessage('Enter a valid email address, such as name@example.com'),
     body('password').notEmpty().withMessage('Password is required'),
   ],
   validate,

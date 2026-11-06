@@ -5,6 +5,7 @@ import api from '../api/axios';
 import ImageGallery from '../components/ImageGallery';
 import { useAuth } from '../context/AuthContext';
 import { formatNaira } from '../utils/currency';
+import { isValidEmail } from '../utils/email';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FALLBACK_MAX_GUESTS = 1;
@@ -28,10 +29,6 @@ function normalizeApartment(data) {
       : [],
     maxGuests: Math.min(100, Math.max(1, Number.parseInt(data.maxGuests, 10) || FALLBACK_MAX_GUESTS)),
   };
-}
-
-function isValidEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
 function ApartmentLoading() {

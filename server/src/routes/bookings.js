@@ -23,7 +23,7 @@ router.post(
     body('checkOut').isISO8601().toDate().withMessage('Valid check-out date is required'),
     body('guests').isInt({ min: 1 }).withMessage('At least 1 guest is required'),
     body('guestName').if((value, { req }) => !req.user).trim().isLength({ min: 2, max: 120 }).withMessage('Enter your name'),
-    body('guestEmail').if((value, { req }) => !req.user).trim().isEmail().withMessage('Enter a valid email address'),
+    body('guestEmail').if((value, { req }) => !req.user).trim().isEmail({ require_tld: true, allow_utf8_local_part: false, domain_specific_validation: true }).normalizeEmail().withMessage('Enter a valid email address, such as name@example.com'),
   ],
   validate,
   create
