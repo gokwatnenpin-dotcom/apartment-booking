@@ -12,10 +12,18 @@ export default function BookingCard({ booking, onCancelled }) {
   const [loading, setLoading] = useState(false);
   const nights = Math.max(1, Math.round((new Date(booking.checkOut) - new Date(booking.checkIn)) / 86400000));
   const cancel = async () => {
-    if (!window.confirm('Cancel this booking?')) return;
+    const reason = window.prompt('Why are you cancelling this booking?');
+    if (reason === null) return;
+    if (reason.trim().length < 5) { toast.error('Please enter a reason of at least 5 characters.'); return; }
     setLoading(true);
-    try { await api.patch(`/bookings/${booking.id}/cancel`); toast.success('Booking cancelled.'); onCancelled?.(booking.id); }
-    catch { toast.error('We couldn’t cancel this booking. Please try again.'); }
+    try { await api.patch(`/bookings/${booking.id}/cancel`, { reason: reason.trim() }); toast.success('Booking cancelled. A confirmation email has been sent.'); onCancelled?.(booking.id); }
+    catch (error) { toast.error(error.response?.data?.message || 'We couldn’t cancel this booking. Please try again.'); }
+    finally { setLoading(false); }
+  };
+  const continuePayment = async () => {
+    setLoading(true);
+    try { const { data } = await api.post(`/bookings/payment/continue/${booking.paymentToken}`); window.location.assign(data.paymentUrl); }
+    catch (error) { toast.error(error.response?.data?.message || 'Could not start payment.'); }
     finally { setLoading(false); }
   };
   return <article className="grid overflow-hidden rounded-card border border-sand-deep bg-white sm:grid-cols-[190px_1fr]">
@@ -23,6 +31,7 @@ export default function BookingCard({ booking, onCancelled }) {
     <div className="p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm text-slate">{booking.apartment?.location}</p><h2 className="mt-1 font-heading text-lg font-bold">{booking.apartment?.title || 'Apartment'}</h2></div><span className={`status-badge ${statusClasses[booking.status] || statusClasses.PENDING}`}>{booking.status.toLowerCase()}</span></div>
       <div className="mt-4 grid gap-3 border-t border-sand-deep pt-4 text-sm sm:grid-cols-3"><p><span className="block text-xs text-slate">Dates</span>{date(booking.checkIn)} – {date(booking.checkOut)}</p><p><span className="block text-xs text-slate">Guests and nights</span>{booking.guests} {booking.guests === 1 ? 'guest' : 'guests'} · {nights} {nights === 1 ? 'night' : 'nights'}</p><p><span className="block text-xs text-slate">Total</span><strong className="font-heading text-base">{formatNaira(booking.totalPrice)}</strong></p></div>
+      {booking.status === 'PENDING' && booking.paymentToken && <button type="button" onClick={continuePayment} disabled={loading} className="btn-primary mt-4">Continue to pay</button>}
       {booking.status !== 'CANCELLED' && <div className="mt-4 border-t border-sand-deep pt-4 text-right"><button type="button" onClick={cancel} disabled={loading} className="text-sm font-semibold text-danger underline-offset-4 hover:underline disabled:opacity-50">{loading ? 'Cancelling…' : 'Cancel booking'}</button></div>}
     </div>
   </article>;

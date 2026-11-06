@@ -61,7 +61,11 @@ model Booking {
   totalPrice  Decimal       @db.Decimal(10, 2)
   status      BookingStatus @default(PENDING)
   paymentReference String?  @unique
+  paymentToken String?      @unique
   paidAt      DateTime?
+  receiptEmailSentAt DateTime?
+  reservationExpiresAt DateTime?
+  cancellationReason String?
   user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   apartment   Apartment     @relation(fields: [apartmentId], references: [id], onDelete: Restrict)
   createdAt   DateTime      @default(now())

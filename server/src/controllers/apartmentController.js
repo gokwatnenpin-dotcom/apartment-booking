@@ -54,7 +54,10 @@ const getAll = async (req, res, next) => {
       if (!isNaN(checkInDate) && !isNaN(checkOutDate) && checkInDate < checkOutDate) {
         where.bookings = {
           none: {
-            status: { not: 'CANCELLED' },
+            OR: [
+              { status: 'CONFIRMED' },
+              { status: 'PENDING', reservationExpiresAt: { gt: new Date() } },
+            ],
             AND: [
               { checkIn: { lt: checkOutDate } },
               { checkOut: { gt: checkInDate } },
@@ -93,7 +96,10 @@ const getOne = async (req, res, next) => {
       include: {
         bookings: {
           where: {
-            status: { not: 'CANCELLED' },
+            OR: [
+              { status: 'CONFIRMED' },
+              { status: 'PENDING', reservationExpiresAt: { gt: new Date() } },
+            ],
             checkOut: { gte: new Date() },
           },
           select: { checkIn: true, checkOut: true, status: true },

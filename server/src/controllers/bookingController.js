@@ -1,5 +1,5 @@
 const prisma = require('../prisma');
-const { sendBookingEmail } = require('../services/brevo');
+const { sendBookingEmail, sendReceiptEmail, sendCancellationEmail } = require('../services/brevo');
 
 async function initializePaystack(booking) {
   if (!process.env.PAYSTACK_SECRET_KEY) throw new Error('Paystack is not configured');
@@ -17,9 +17,6 @@ async function initializePaystack(booking) {
 // POST /api/bookings
 const create = async (req, res, next) => {
   try {
-    if (!process.env.PAYSTACK_SECRET_KEY) {
-      return res.status(503).json({ message: 'Online payments are not configured yet. Please try again later.' });
-    }
     const { apartmentId, checkIn, checkOut, guests, guestName, guestEmail } = req.body;
     const userId = req.user?.id || null;
 
@@ -61,7 +58,10 @@ const create = async (req, res, next) => {
       const overlapping = await tx.booking.findFirst({
         where: {
           apartmentId,
-          status: { not: 'CANCELLED' },
+          OR: [
+            { status: 'CONFIRMED' },
+            { status: 'PENDING', reservationExpiresAt: { gt: new Date() } },
+          ],
           AND: [
             { checkIn: { lt: checkOutDate } },
             { checkOut: { gt: checkInDate } },
@@ -91,6 +91,8 @@ const create = async (req, res, next) => {
           totalPrice,
           status: 'PENDING',
           paymentReference: `zestay_${Date.now()}_${require('crypto').randomBytes(6).toString('hex')}`,
+          paymentToken: require('crypto').randomBytes(32).toString('hex'),
+          reservationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
         include: {
           apartment: {
@@ -101,16 +103,9 @@ const create = async (req, res, next) => {
       });
     }, { isolationLevel: 'Serializable' });
 
-    let paymentUrl;
-    try {
-      paymentUrl = await initializePaystack(booking);
-    } catch (paymentError) {
-      await prisma.booking.update({ where: { id: booking.id }, data: { status: 'CANCELLED' } });
-      console.error('Paystack initialization failed:', paymentError.message);
-      return res.status(503).json({ message: 'We could not start the payment. Please try again shortly.' });
-    }
-    await sendBookingEmail(booking, paymentUrl).catch((error) => console.error('Booking email failed:', error.message));
-    res.status(201).json({ ...booking, paymentUrl });
+    const continueUrl = `${process.env.CLIENT_URL}/payment/continue?token=${booking.paymentToken}`;
+    await sendBookingEmail(booking, continueUrl).catch((error) => console.error('Booking email failed:', error.message));
+    res.status(201).json(booking);
   } catch (error) {
     // PostgreSQL serialization failures mean a concurrent booking transaction
     // won the race. Treat that outcome as an unavailable date range.
@@ -121,6 +116,15 @@ const create = async (req, res, next) => {
   }
 };
 
+const continuePayment = async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findUnique({ where: { paymentToken: req.params.token }, include: { apartment: true, user: true } });
+    if (!booking || booking.status !== 'PENDING' || booking.reservationExpiresAt < new Date()) return res.status(410).json({ message: 'This unpaid reservation has expired. Please reserve again.' });
+    const paymentUrl = await initializePaystack(booking);
+    res.json({ paymentUrl });
+  } catch (error) { next(error); }
+};
+
 const verifyPayment = async (req, res, next) => {
   try {
     const booking = await prisma.booking.findUnique({ where: { paymentReference: req.query.reference } });
@@ -128,7 +132,11 @@ const verifyPayment = async (req, res, next) => {
     const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(booking.paymentReference)}`, { headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` } });
     const result = await response.json();
     if (!response.ok || result.data?.status !== 'success' || Number(result.data.amount) !== Math.round(Number(booking.totalPrice) * 100)) return res.status(402).json({ message: 'Payment has not been confirmed' });
-    const paid = await prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED', paidAt: new Date() } });
+    const paid = await prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED', paidAt: new Date() }, include: { apartment: true, user: true } });
+    if (!paid.receiptEmailSentAt) {
+      await sendReceiptEmail(paid).catch((error) => console.error('Receipt email failed:', error.message));
+      await prisma.booking.updateMany({ where: { id: paid.id, receiptEmailSentAt: null }, data: { receiptEmailSentAt: new Date() } });
+    }
     res.json({ status: paid.status, bookingId: paid.id });
   } catch (error) { next(error); }
 };
@@ -141,7 +149,13 @@ const paystackWebhook = async (req, res) => {
   if (req.body.event === 'charge.success') {
     const data = req.body.data;
     const booking = await prisma.booking.findUnique({ where: { paymentReference: data.reference } });
-    if (booking && Number(data.amount) === Math.round(Number(booking.totalPrice) * 100)) await prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED', paidAt: new Date() } });
+    if (booking && Number(data.amount) === Math.round(Number(booking.totalPrice) * 100)) {
+      const paid = await prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED', paidAt: new Date() }, include: { apartment: true, user: true } });
+      if (!paid.receiptEmailSentAt) {
+        await sendReceiptEmail(paid).catch((error) => console.error('Receipt email failed:', error.message));
+        await prisma.booking.updateMany({ where: { id: paid.id, receiptEmailSentAt: null }, data: { receiptEmailSentAt: new Date() } });
+      }
+    }
   }
   res.sendStatus(200);
 };
@@ -180,13 +194,18 @@ const cancel = async (req, res, next) => {
       return res.status(400).json({ message: 'Booking is already cancelled' });
     }
 
+    const reason = String(req.body.reason || '').trim();
+    if (reason.length < 5) return res.status(400).json({ message: 'Please provide a cancellation reason (at least 5 characters).' });
     const updated = await prisma.booking.update({
       where: { id },
-      data: { status: 'CANCELLED' },
+      data: { status: 'CANCELLED', cancellationReason: reason },
       include: {
-        apartment: { select: { title: true, location: true } },
+        apartment: true,
+        user: true,
       },
     });
+
+    await sendCancellationEmail(updated, reason).catch((error) => console.error('Cancellation email failed:', error.message));
 
     res.json(updated);
   } catch (error) {
@@ -236,4 +255,4 @@ const getAll = async (req, res, next) => {
   }
 };
 
-module.exports = { create, getMy, cancel, getAll, verifyPayment, paystackWebhook };
+module.exports = { create, getMy, cancel, getAll, verifyPayment, paystackWebhook, continuePayment };

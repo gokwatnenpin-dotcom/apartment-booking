@@ -107,6 +107,7 @@ function BookingForm({
   formRef,
   checkInInputRef,
   onSubmit,
+  onContinuePayment,
   onDateChange,
   onGuestsChange,
   onGuestNameChange,
@@ -159,7 +160,7 @@ function BookingForm({
 
       {confirmation && (
         <div role="status" className="rounded-control border border-success/30 bg-success-tint p-3 text-sm text-success">
-          <p className="font-bold">Reservation confirmed</p>
+          <p className="font-bold">Stay reserved. Payment is still due.</p>
           <p className="mt-1">Booking reference: {confirmation.id}</p>
           {!confirmation.userId && <p className="mt-1 text-xs">Save this reference. This booking is not linked to an account.</p>}
         </div>
@@ -180,8 +181,9 @@ function BookingForm({
       )}
 
       <button type="submit" disabled={loading || conflict || Boolean(confirmation)} className="btn-primary w-full">
-        {loading ? 'Reserving…' : confirmation ? 'Reservation confirmed' : 'Reserve stay'}
+        {loading ? 'Reserving…' : 'Reserve stay'}
       </button>
+      {confirmation && <button type="button" onClick={onContinuePayment} disabled={loading} className="btn-secondary w-full">Continue to pay</button>}
       <p className="text-center text-xs text-slate">You can review the total before confirming.</p>
     </form>
   );
@@ -284,7 +286,8 @@ export default function ApartmentDetail() {
         guestEmail: guestEmail.trim() || user?.email || '',
       });
 
-      window.location.assign(data.paymentUrl);
+      setGuestConfirmation(data);
+      toast.success('Your stay is reserved. You can pay now or later from your email.');
     } catch (error) {
       const message = error.response?.data?.message || 'We could not reserve those dates. Please try again.';
       setBookingError(message);
@@ -292,6 +295,19 @@ export default function ApartmentDetail() {
     } finally {
       setBookingLoading(false);
     }
+  };
+
+  const continueToPayment = async () => {
+    if (!guestConfirmation?.paymentToken) return;
+    setBookingLoading(true);
+    try {
+      const { data } = await api.post(`/bookings/payment/continue/${guestConfirmation.paymentToken}`);
+      window.location.assign(data.paymentUrl);
+    } catch (error) {
+      const message = error.response?.data?.message || 'We could not start payment. Try again later.';
+      setBookingError(message);
+      toast.error(message);
+    } finally { setBookingLoading(false); }
   };
 
   const changeDate = (field, value) => {
@@ -321,6 +337,7 @@ export default function ApartmentDetail() {
     formRef: bookingFormRef,
     checkInInputRef,
     onSubmit: handleBooking,
+    onContinuePayment: continueToPayment,
     onDateChange: changeDate,
     onGuestsChange: (value) => { setGuests(value); clearConfirmation(); },
     onGuestNameChange: (value) => { setGuestName(value); clearConfirmation(); },

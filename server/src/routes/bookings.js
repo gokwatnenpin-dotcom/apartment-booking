@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { create, getMy, cancel, getAll, verifyPayment, paystackWebhook } = require('../controllers/bookingController');
+const { create, getMy, cancel, getAll, verifyPayment, paystackWebhook, continuePayment } = require('../controllers/bookingController');
 const authenticate = require('../middleware/auth');
 const optionalAuth = require('../middleware/optionalAuth');
 const requireAdmin = require('../middleware/admin');
@@ -8,6 +8,7 @@ const validate = require('../middleware/validate');
 
 const router = express.Router();
 router.get('/payment/verify', verifyPayment);
+router.post('/payment/continue/:token', continuePayment);
 router.post('/paystack/webhook', paystackWebhook);
 
 // /my MUST come before /:id to avoid route conflict
@@ -29,6 +30,6 @@ router.post(
 );
 
 router.get('/', authenticate, requireAdmin, getAll);
-router.patch('/:id/cancel', authenticate, param('id').isUUID().withMessage('Invalid booking ID'), validate, cancel);
+router.patch('/:id/cancel', authenticate, param('id').isUUID().withMessage('Invalid booking ID'), body('reason').trim().isLength({ min: 5, max: 1000 }).withMessage('Enter a cancellation reason'), validate, cancel);
 
 module.exports = router;

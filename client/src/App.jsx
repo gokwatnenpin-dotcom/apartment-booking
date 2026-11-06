@@ -19,6 +19,7 @@ const ApartmentForm = lazy(() => import('./pages/ApartmentForm'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback'));
+const PaymentContinue = lazy(() => import('./pages/PaymentContinue'));
 
 export default function App() {
   const location = useLocation();
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/payment/callback" element={<PaymentCallback />} />
+          <Route path="/payment/continue" element={<PaymentContinue />} />
           <Route path="/unsubscribe" element={<Privacy />} />
           <Route
             path="/profile"
