@@ -12,6 +12,9 @@ const errorHandler = require('./middleware/errorHandler');
 const prisma = require('./prisma');
 
 const app = express();
+// Render sits behind a reverse proxy and forwards the client IP in
+// X-Forwarded-For. Trust the first proxy so rate limiting can identify users.
+app.set('trust proxy', 1);
 // Browser Origin headers never include a trailing slash. Normalize the
 // configured Vercel URL so a pasted URL with a slash still matches.
 const clientOrigin = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
