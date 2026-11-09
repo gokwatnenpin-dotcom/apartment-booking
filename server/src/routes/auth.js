@@ -1,7 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const rateLimit = require('express-rate-limit');
-const { register, login, me } = require('../controllers/authController');
+const { register, login, me, googleAuth } = require('../controllers/authController');
 const authenticate = require('../middleware/auth');
 const validate = require('../middleware/validate');
 
@@ -19,6 +19,14 @@ router.post(
   ],
   validate,
   register
+);
+
+router.post(
+  '/google',
+  loginLimiter,
+  [body('access_token').isString().notEmpty().withMessage('Google access token is required')],
+  validate,
+  googleAuth
 );
 
 router.post(

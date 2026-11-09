@@ -97,7 +97,20 @@ NODE_ENV=development
 **Client (`client/.env`):**
 ```env
 VITE_API_URL=http://localhost:5000/api
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+### Google sign-in (Supabase)
+
+The login page includes “Continue with Google”. The browser starts OAuth through Supabase, and the server exchanges the resulting Supabase access token for the app's existing JWT. Add these server variables as well:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+In Google Cloud Console, create an OAuth 2.0 Web application client. Set its authorized redirect URI to `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`. In Supabase, open Authentication → Providers → Google, enable Google, and paste that Google client ID and client secret. In Authentication → URL Configuration, set the site URL to the deployed frontend URL and add `http://localhost:5173/login` plus the deployed frontend `/login` URL to the redirect allow list.
 
 *(Both `.env.example` templates are provided and `.env` files are ignored by git).*
 
