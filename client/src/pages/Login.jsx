@@ -16,7 +16,7 @@ export default function Login() {
 
   const submit = async (event) => {
     event.preventDefault(); setError('');
-    if (!isValidEmail(email)) { setError('Enter a valid email address, such as name@example.com.'); return; }
+    if (!isValidEmail(email)) { setError('Enter a valid email address.'); return; }
     setLoading(true);
     try { await login(email.trim(), password); navigate(from, { replace: true }); }
     catch (err) { setError(err.response?.data?.message || 'We couldn’t sign you in. Check your email and password.'); }
