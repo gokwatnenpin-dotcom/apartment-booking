@@ -43,7 +43,7 @@ export default function Register() {
         <button disabled={loading} className="btn-primary w-full">{loading ? 'Creating account…' : 'Create account'}</button>
       </form>
       <div className="my-5 flex items-center gap-3 text-xs text-slate"><span className="h-px flex-1 bg-sand-deep" />or<span className="h-px flex-1 bg-sand-deep" /></div>
-      <button type="button" disabled={loading} onClick={googleSignIn} className="flex w-full items-center justify-center gap-2 rounded-control border border-sand-deep bg-white px-4 py-3 text-sm font-semibold text-ink hover:bg-sand"><GoogleIcon />Continue with Google</button>
+      <button type="button" disabled={loading} onClick={googleSignIn} className="flex w-full items-center justify-center gap-2 rounded-control border border-sand-deep bg-white px-4 py-3 text-sm font-semibold text-ink hover:bg-sand"><GoogleIcon />{loading ? 'Connecting to Google…' : 'Continue with Google'}</button>
       <p className="mt-6 border-t border-sand-deep pt-5 text-center text-sm text-slate">Already have an account? <Link to="/login" className="font-semibold text-accent underline-offset-4 hover:underline">Sign in</Link></p>
     </section>
   </main>;

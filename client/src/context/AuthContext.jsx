@@ -71,6 +71,8 @@ export function AuthProvider({ children }) {
 
   const loginWithGoogle = useCallback(async (redirectPath = '/login') => {
     if (!supabase) throw new Error('Google sign-in is not configured yet.');
+    // Warm the Render service while the user completes Google's consent step.
+    void api.get('/health').catch(() => {});
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}${redirectPath}` },
