@@ -25,7 +25,7 @@ export default function Register() {
 
   const googleSignIn = async () => {
     setError(''); setLoading(true);
-    try { await loginWithGoogle(); }
+    try { await loginWithGoogle('/register'); }
     catch (err) { setError(err.response?.data?.message || err.message || 'Google sign-in is unavailable right now.'); setLoading(false); }
   };
 
