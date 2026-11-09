@@ -41,14 +41,14 @@ export function AuthProvider({ children }) {
     let mounted = true;
     const loadSupabaseSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session && !localStorage.getItem('token')) {
+      if (session) {
         try { await exchangeSupabaseSession(session); } catch (error) { console.error('Google sign-in failed:', error); }
       }
       if (mounted) setLoading(false);
     };
     loadSupabaseSession();
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session && !localStorage.getItem('token')) {
+      if (event === 'SIGNED_IN' && session) {
         exchangeSupabaseSession(session).catch((error) => console.error('Google sign-in failed:', error));
       }
     });
