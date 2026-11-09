@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axios';
 import { supabase } from '../lib/supabase';
 
@@ -7,6 +7,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser]     = useState(null);
   const [loading, setLoading] = useState(true);
+  const exchangeInFlight = useRef(null);
 
   const saveSession = useCallback((data) => {
     localStorage.setItem('token', data.token);
@@ -17,8 +18,11 @@ export function AuthProvider({ children }) {
 
   const exchangeSupabaseSession = useCallback(async (session) => {
     if (!session?.access_token) return null;
-    const { data } = await api.post('/auth/google', { access_token: session.access_token });
-    return saveSession(data);
+    if (exchangeInFlight.current) return exchangeInFlight.current;
+    exchangeInFlight.current = api.post('/auth/google', { access_token: session.access_token })
+      .then(({ data }) => saveSession(data))
+      .finally(() => { exchangeInFlight.current = null; });
+    return exchangeInFlight.current;
   }, [saveSession]);
 
   // Rehydrate from localStorage on mount
